@@ -39,6 +39,3 @@ renders/
 
 # logs
 logs/*.json
-
-# .claude
-.claude/

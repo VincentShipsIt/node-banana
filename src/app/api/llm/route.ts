@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
-import { LLMGenerateRequest, LLMGenerateResponse, LLMModelType } from "@/types";
-import { logger } from "@/utils/logger";
+import { GoogleGenAI } from '@google/genai';
+import { type NextRequest, NextResponse } from 'next/server';
+import type { LLMGenerateRequest, LLMGenerateResponse, LLMModelType } from '@/types';
+import { logger } from '@/utils/logger';
 
 export const maxDuration = 60; // 1 minute timeout
 
@@ -12,14 +12,14 @@ function generateRequestId(): string {
 
 // Map model types to actual API model IDs
 const GOOGLE_MODEL_MAP: Record<string, string> = {
-  "gemini-2.5-flash": "gemini-2.5-flash",
-  "gemini-3-flash-preview": "gemini-3-flash-preview",
-  "gemini-3-pro-preview": "gemini-3-pro-preview",
+  'gemini-2.5-flash': 'gemini-2.5-flash',
+  'gemini-3-flash-preview': 'gemini-3-flash-preview',
+  'gemini-3-pro-preview': 'gemini-3-pro-preview',
 };
 
 const OPENAI_MODEL_MAP: Record<string, string> = {
-  "gpt-4.1-mini": "gpt-4.1-mini",
-  "gpt-4.1-nano": "gpt-4.1-nano",
+  'gpt-4.1-mini': 'gpt-4.1-mini',
+  'gpt-4.1-nano': 'gpt-4.1-nano',
 };
 
 async function generateWithGoogle(
@@ -33,7 +33,7 @@ async function generateWithGoogle(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     logger.error('api.error', 'GEMINI_API_KEY not configured', { requestId });
-    throw new Error("GEMINI_API_KEY not configured");
+    throw new Error('GEMINI_API_KEY not configured');
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -49,7 +49,9 @@ async function generateWithGoogle(
   });
 
   // Build multimodal content if images are provided
-  let contents: string | Array<{ inlineData: { mimeType: string; data: string } } | { text: string }>;
+  let contents:
+    | string
+    | Array<{ inlineData: { mimeType: string; data: string } } | { text: string }>;
   if (images && images.length > 0) {
     contents = [
       ...images.map((img) => {
@@ -66,7 +68,7 @@ async function generateWithGoogle(
         // Fallback: assume PNG if no data URL prefix
         return {
           inlineData: {
-            mimeType: "image/png",
+            mimeType: 'image/png',
             data: img,
           },
         };
@@ -92,7 +94,7 @@ async function generateWithGoogle(
   const text = response.text;
   if (!text) {
     logger.error('api.error', 'No text in Google AI response', { requestId });
-    throw new Error("No text in Google AI response");
+    throw new Error('No text in Google AI response');
   }
 
   logger.info('api.llm', 'Google AI API response received', {
@@ -115,7 +117,7 @@ async function generateWithOpenAI(
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     logger.error('api.error', 'OPENAI_API_KEY not configured', { requestId });
-    throw new Error("OPENAI_API_KEY not configured");
+    throw new Error('OPENAI_API_KEY not configured');
   }
 
   const modelId = OPENAI_MODEL_MAP[model];
@@ -133,9 +135,9 @@ async function generateWithOpenAI(
   let content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
   if (images && images.length > 0) {
     content = [
-      { type: "text", text: prompt },
+      { type: 'text', text: prompt },
       ...images.map((img) => ({
-        type: "image_url" as const,
+        type: 'image_url' as const,
         image_url: { url: img },
       })),
     ];
@@ -144,15 +146,15 @@ async function generateWithOpenAI(
   }
 
   const startTime = Date.now();
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: modelId,
-      messages: [{ role: "user", content }],
+      messages: [{ role: 'user', content }],
       temperature,
       max_tokens: maxTokens,
     }),
@@ -174,7 +176,7 @@ async function generateWithOpenAI(
 
   if (!text) {
     logger.error('api.error', 'No text in OpenAI response', { requestId });
-    throw new Error("No text in OpenAI response");
+    throw new Error('No text in OpenAI response');
   }
 
   logger.info('api.llm', 'OpenAI API response received', {
@@ -191,14 +193,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: LLMGenerateRequest = await request.json();
-    const {
-      prompt,
-      images,
-      provider,
-      model,
-      temperature = 0.7,
-      maxTokens = 1024
-    } = body;
+    const { prompt, images, provider, model, temperature = 0.7, maxTokens = 1024 } = body;
 
     logger.info('api.llm', 'LLM generation request received', {
       requestId,
@@ -214,16 +209,16 @@ export async function POST(request: NextRequest) {
     if (!prompt) {
       logger.warn('api.llm', 'LLM request validation failed: missing prompt', { requestId });
       return NextResponse.json<LLMGenerateResponse>(
-        { success: false, error: "Prompt is required" },
+        { success: false, error: 'Prompt is required' },
         { status: 400 }
       );
     }
 
     let text: string;
 
-    if (provider === "google") {
+    if (provider === 'google') {
       text = await generateWithGoogle(prompt, model, temperature, maxTokens, images, requestId);
-    } else if (provider === "openai") {
+    } else if (provider === 'openai') {
       text = await generateWithOpenAI(prompt, model, temperature, maxTokens, images, requestId);
     } else {
       logger.warn('api.llm', 'Unknown provider requested', { requestId, provider });
@@ -243,12 +238,17 @@ export async function POST(request: NextRequest) {
       text,
     });
   } catch (error) {
-    logger.error('api.error', 'LLM generation error', { requestId }, error instanceof Error ? error : undefined);
+    logger.error(
+      'api.error',
+      'LLM generation error',
+      { requestId },
+      error instanceof Error ? error : undefined
+    );
 
     // Handle rate limiting
-    if (error instanceof Error && error.message.includes("429")) {
+    if (error instanceof Error && error.message.includes('429')) {
       return NextResponse.json<LLMGenerateResponse>(
-        { success: false, error: "Rate limit reached. Please wait and try again." },
+        { success: false, error: 'Rate limit reached. Please wait and try again.' },
         { status: 429 }
       );
     }
@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json<LLMGenerateResponse>(
       {
         success: false,
-        error: error instanceof Error ? error.message : "LLM generation failed",
+        error: error instanceof Error ? error.message : 'LLM generation failed',
       },
       { status: 500 }
     );
