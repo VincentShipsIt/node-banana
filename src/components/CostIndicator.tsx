@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { useWorkflowStore } from "@/store/workflowStore";
-import { calculatePredictedCost, formatCost } from "@/utils/costCalculator";
-import { CostDialog } from "./CostDialog";
+import { useMemo, useState } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
+import { calculatePredictedCost, formatCost } from '@/utils/costCalculator';
+import { CostDialog } from './CostDialog';
 
 export function CostIndicator() {
   const [showDialog, setShowDialog] = useState(false);
@@ -23,6 +23,7 @@ export function CostIndicator() {
   return (
     <>
       <button
+        type="button"
         onClick={() => setShowDialog(true)}
         className="px-2 py-0.5 rounded text-xs text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors"
         title="View cost details"

@@ -1,29 +1,29 @@
-"use client";
+'use client';
 
-import { useCallback, useState, useRef, useEffect } from "react";
-import { useReactFlow, ViewportPortal } from "@xyflow/react";
-import { useWorkflowStore, GROUP_COLORS } from "@/store/workflowStore";
-import { GroupColor } from "@/types";
+import { useReactFlow, ViewportPortal } from '@xyflow/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { GROUP_COLORS, useWorkflowStore } from '@/store/workflowStore';
+import type { GroupColor } from '@/types';
 
 const HEADER_HEIGHT = 32;
 
 const COLOR_OPTIONS: { color: GroupColor; label: string }[] = [
-  { color: "neutral", label: "Gray" },
-  { color: "blue", label: "Blue" },
-  { color: "green", label: "Green" },
-  { color: "purple", label: "Purple" },
-  { color: "orange", label: "Orange" },
-  { color: "red", label: "Red" },
+  { color: 'neutral', label: 'Gray' },
+  { color: 'blue', label: 'Blue' },
+  { color: 'green', label: 'Green' },
+  { color: 'purple', label: 'Purple' },
+  { color: 'orange', label: 'Orange' },
+  { color: 'red', label: 'Red' },
 ];
 
 // Brighter preview colors for the color picker (more saturated/vivid)
 const PICKER_PREVIEW_COLORS: Record<GroupColor, string> = {
-  neutral: "#525252",
-  blue: "#3b82f6",
-  green: "#22c55e",
-  purple: "#8b5cf6",
-  orange: "#f97316",
-  red: "#ef4444",
+  neutral: '#525252',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  purple: '#8b5cf6',
+  orange: '#f97316',
+  red: '#ef4444',
 };
 
 interface GroupBackgroundProps {
@@ -49,7 +49,7 @@ function GroupBackground({ groupId }: GroupBackgroundProps) {
         height: group.size.height,
         backgroundColor: `${bgColor}60`,
         border: `1px solid ${bgColor}`,
-        pointerEvents: "none",
+        pointerEvents: 'none',
       }}
     />
   );
@@ -66,13 +66,20 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
   const group = groups[groupId];
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(group?.name || "");
+  const [editName, setEditName] = useState(group?.name || '');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeHandle, setResizeHandle] = useState<string | null>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number; posX: number; posY: number } | null>(null);
+  const resizeStartRef = useRef<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    posX: number;
+    posY: number;
+  } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
@@ -97,26 +104,26 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
     };
 
     if (showColorPicker) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showColorPicker]);
 
   const handleNameSubmit = useCallback(() => {
     if (editName.trim() && editName !== group?.name) {
       updateGroup(groupId, { name: editName.trim() });
     } else {
-      setEditName(group?.name || "");
+      setEditName(group?.name || '');
     }
     setIsEditing(false);
   }, [editName, group?.name, groupId, updateGroup]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         handleNameSubmit();
-      } else if (e.key === "Escape") {
-        setEditName(group?.name || "");
+      } else if (e.key === 'Escape') {
+        setEditName(group?.name || '');
         setIsEditing(false);
       }
     },
@@ -140,21 +147,15 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
   }, [groupId, toggleGroupLock]);
 
   // Header drag handlers
-  const handleHeaderMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (
-        (e.target as HTMLElement).closest("button") ||
-        (e.target as HTMLElement).closest("input")
-      ) {
-        return;
-      }
-      e.stopPropagation();
-      e.preventDefault();
-      setIsDragging(true);
-      dragStartRef.current = { x: e.clientX, y: e.clientY };
-    },
-    []
-  );
+  const handleHeaderMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input')) {
+      return;
+    }
+    e.stopPropagation();
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+  }, []);
 
   // Resize handlers
   const handleResizeMouseDown = useCallback(
@@ -203,12 +204,12 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
       dragStartRef.current = null;
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, groupId, group?.position, moveGroupNodes, updateGroup, zoom]);
 
@@ -227,18 +228,18 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
       let newPosY = resizeStartRef.current.posY;
 
       // Handle based on which corner/edge is being dragged
-      if (resizeHandle.includes("e")) {
+      if (resizeHandle.includes('e')) {
         newWidth = Math.max(200, resizeStartRef.current.width + deltaX);
       }
-      if (resizeHandle.includes("w")) {
+      if (resizeHandle.includes('w')) {
         const widthDelta = Math.min(deltaX, resizeStartRef.current.width - 200);
         newWidth = resizeStartRef.current.width - widthDelta;
         newPosX = resizeStartRef.current.posX + widthDelta;
       }
-      if (resizeHandle.includes("s")) {
+      if (resizeHandle.includes('s')) {
         newHeight = Math.max(100, resizeStartRef.current.height + deltaY);
       }
-      if (resizeHandle.includes("n")) {
+      if (resizeHandle.includes('n')) {
         const heightDelta = Math.min(deltaY, resizeStartRef.current.height - 100);
         newHeight = resizeStartRef.current.height - heightDelta;
         newPosY = resizeStartRef.current.posY + heightDelta;
@@ -256,12 +257,12 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
       resizeStartRef.current = null;
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isResizing, resizeHandle, groupId, updateGroup, zoom]);
 
@@ -277,7 +278,7 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
         top: group.position.y,
         width: group.size.width,
         height: group.size.height,
-        pointerEvents: "none",
+        pointerEvents: 'none',
       }}
     >
       {/* Header - interactive */}
@@ -321,11 +322,11 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
           {showColorPicker && (
             <>
               {/* Invisible backdrop to catch clicks outside */}
+              <div className="fixed inset-0 z-40" onClick={() => setShowColorPicker(false)} />
               <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowColorPicker(false)}
-              />
-              <div className="absolute bottom-full left-1/2 mb-2 z-50 pointer-events-auto" style={{ transform: "translateX(-50%)" }}>
+                className="absolute bottom-full left-1/2 mb-2 z-50 pointer-events-auto"
+                style={{ transform: 'translateX(-50%)' }}
+              >
                 {COLOR_OPTIONS.map(({ color, label }, index) => {
                   // Fan out in an arc above the button
                   const totalItems = COLOR_OPTIONS.length;
@@ -346,8 +347,8 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
                       onClick={() => handleColorChange(color)}
                       className={`absolute w-6 h-6 rounded-full border-2 transition-[transform,border-color] duration-150 hover:scale-110 ${
                         group.color === color
-                          ? "border-white"
-                          : "border-transparent hover:border-white/50"
+                          ? 'border-white'
+                          : 'border-transparent hover:border-white/50'
                       }`}
                       style={{
                         backgroundColor: PICKER_PREVIEW_COLORS[color],
@@ -356,8 +357,8 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
                         animationDelay: `${index * 0.025}s`,
                         opacity: 0,
                         // Use CSS custom properties to pass the final position to the animation
-                        ["--final-x" as string]: `${finalX}px`,
-                        ["--final-y" as string]: `${finalY}px`,
+                        ['--final-x' as string]: `${finalX}px`,
+                        ['--final-y' as string]: `${finalY}px`,
                       }}
                       title={label}
                     >
@@ -385,15 +386,35 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
         <button
           onClick={handleToggleLock}
           className="p-0.5 rounded hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-          title={group.locked ? "Unlock group" : "Lock group"}
+          title={group.locked ? 'Unlock group' : 'Lock group'}
         >
           {group.locked ? (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
             </svg>
           ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+              />
             </svg>
           )}
         </button>
@@ -404,7 +425,13 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
           className="p-0.5 rounded hover:bg-white/20 text-white/70 hover:text-white transition-colors"
           title="Delete group"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -413,35 +440,35 @@ function GroupControls({ groupId, zoom }: GroupControlsProps) {
       {/* Resize handles - interactive */}
       <div
         className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 'nw')}
       />
       <div
         className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 'ne')}
       />
       <div
         className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 'sw')}
       />
       <div
         className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "se")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 'se')}
       />
       <div
         className="absolute top-0 left-3 right-3 h-2 cursor-n-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "n")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 'n')}
       />
       <div
         className="absolute bottom-0 left-3 right-3 h-2 cursor-s-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "s")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 's')}
       />
       <div
         className="absolute left-0 top-3 bottom-3 w-2 cursor-w-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "w")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 'w')}
       />
       <div
         className="absolute right-0 top-3 bottom-3 w-2 cursor-e-resize pointer-events-auto"
-        onMouseDown={(e) => handleResizeMouseDown(e, "e")}
+        onMouseDown={(e) => handleResizeMouseDown(e, 'e')}
       />
     </div>
   );
@@ -457,7 +484,7 @@ export function GroupBackgroundsPortal() {
 
   return (
     <ViewportPortal>
-      <div style={{ position: "absolute", top: 0, left: 0, zIndex: -1, pointerEvents: "none" }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -1, pointerEvents: 'none' }}>
         {groupIds.map((groupId) => (
           <GroupBackground key={groupId} groupId={groupId} />
         ))}
@@ -477,7 +504,7 @@ export function GroupControlsOverlay() {
 
   return (
     <ViewportPortal>
-      <div style={{ position: "absolute", top: 0, left: 0, zIndex: 1000, pointerEvents: "none" }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 1000, pointerEvents: 'none' }}>
         {groupIds.map((groupId) => (
           <GroupControls key={groupId} groupId={groupId} zoom={viewport.zoom} />
         ))}

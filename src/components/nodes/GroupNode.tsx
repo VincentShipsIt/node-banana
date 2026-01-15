@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { NodeProps, NodeResizer, Node as FlowNode } from "@xyflow/react";
-import { useWorkflowStore, GROUP_COLORS } from "@/store/workflowStore";
-import { NodeGroup, GroupColor } from "@/types";
+import { type Node as FlowNode, type NodeProps, NodeResizer } from '@xyflow/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { GROUP_COLORS, useWorkflowStore } from '@/store/workflowStore';
+import type { GroupColor } from '@/types';
 
 // Header height constant
 const HEADER_HEIGHT = 32;
@@ -12,24 +12,24 @@ interface GroupNodeData extends Record<string, unknown> {
   groupId: string;
 }
 
-type GroupNodeType = FlowNode<GroupNodeData, "group">;
+type GroupNodeType = FlowNode<GroupNodeData, 'group'>;
 
 const COLOR_OPTIONS: { color: GroupColor; label: string }[] = [
-  { color: "neutral", label: "Gray" },
-  { color: "blue", label: "Blue" },
-  { color: "green", label: "Green" },
-  { color: "purple", label: "Purple" },
-  { color: "orange", label: "Orange" },
-  { color: "red", label: "Red" },
+  { color: 'neutral', label: 'Gray' },
+  { color: 'blue', label: 'Blue' },
+  { color: 'green', label: 'Green' },
+  { color: 'purple', label: 'Purple' },
+  { color: 'orange', label: 'Orange' },
+  { color: 'red', label: 'Red' },
 ];
 
-export function GroupNode({ id, data, selected }: NodeProps<GroupNodeType>) {
+export function GroupNode({ id: _id, data, selected }: NodeProps<GroupNodeType>) {
   const { groups, updateGroup, deleteGroup, moveGroupNodes } = useWorkflowStore();
   const groupId = data.groupId;
   const group = groups[groupId];
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(group?.name || "");
+  const [editName, setEditName] = useState(group?.name || '');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -60,26 +60,26 @@ export function GroupNode({ id, data, selected }: NodeProps<GroupNodeType>) {
     };
 
     if (showColorPicker) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showColorPicker]);
 
   const handleNameSubmit = useCallback(() => {
     if (editName.trim() && editName !== group?.name) {
       updateGroup(groupId, { name: editName.trim() });
     } else {
-      setEditName(group?.name || "");
+      setEditName(group?.name || '');
     }
     setIsEditing(false);
   }, [editName, group?.name, groupId, updateGroup]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         handleNameSubmit();
-      } else if (e.key === "Escape") {
-        setEditName(group?.name || "");
+      } else if (e.key === 'Escape') {
+        setEditName(group?.name || '');
         setIsEditing(false);
       }
     },
@@ -99,21 +99,15 @@ export function GroupNode({ id, data, selected }: NodeProps<GroupNodeType>) {
   }, [groupId, deleteGroup]);
 
   // Header drag handlers
-  const handleHeaderMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      // Only start drag if clicking on header background, not buttons/inputs
-      if (
-        (e.target as HTMLElement).closest("button") ||
-        (e.target as HTMLElement).closest("input")
-      ) {
-        return;
-      }
-      e.stopPropagation();
-      setIsDragging(true);
-      dragStartRef.current = { x: e.clientX, y: e.clientY };
-    },
-    []
-  );
+  const handleHeaderMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only start drag if clicking on header background, not buttons/inputs
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input')) {
+      return;
+    }
+    e.stopPropagation();
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+  }, []);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -136,12 +130,12 @@ export function GroupNode({ id, data, selected }: NodeProps<GroupNodeType>) {
       dragStartRef.current = null;
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, groupId, moveGroupNodes]);
 
@@ -208,8 +202,8 @@ export function GroupNode({ id, data, selected }: NodeProps<GroupNodeType>) {
                     onClick={() => handleColorChange(color)}
                     className={`w-6 h-6 rounded border-2 transition-all ${
                       group.color === color
-                        ? "border-white scale-110"
-                        : "border-transparent hover:border-white/50"
+                        ? 'border-white scale-110'
+                        : 'border-transparent hover:border-white/50'
                     }`}
                     style={{ backgroundColor: GROUP_COLORS[color] }}
                     title={label}
@@ -225,7 +219,13 @@ export function GroupNode({ id, data, selected }: NodeProps<GroupNodeType>) {
             className="p-0.5 rounded hover:bg-white/20 text-white/70 hover:text-white transition-colors"
             title="Delete group"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

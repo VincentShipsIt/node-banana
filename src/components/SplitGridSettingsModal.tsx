@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { useWorkflowStore } from "@/store/workflowStore";
-import { SplitGridNodeData, AspectRatio, Resolution, ModelType } from "@/types";
+import { useCallback, useState } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
+import type { AspectRatio, ModelType, Resolution, SplitGridNodeData } from '@/types';
 
 interface SplitGridSettingsModalProps {
   nodeId: string;
@@ -12,11 +12,22 @@ interface SplitGridSettingsModalProps {
 
 const TARGET_COUNT_OPTIONS = [4, 6, 8, 9, 10] as const;
 
-const ASPECT_RATIOS: AspectRatio[] = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"];
-const RESOLUTIONS: Resolution[] = ["1K", "2K", "4K"];
+const ASPECT_RATIOS: AspectRatio[] = [
+  '1:1',
+  '2:3',
+  '3:2',
+  '3:4',
+  '4:3',
+  '4:5',
+  '5:4',
+  '9:16',
+  '16:9',
+  '21:9',
+];
+const RESOLUTIONS: Resolution[] = ['1K', '2K', '4K'];
 const MODELS: { value: ModelType; label: string }[] = [
-  { value: "nano-banana", label: "Nano Banana" },
-  { value: "nano-banana-pro", label: "Nano Banana Pro" },
+  { value: 'nano-banana', label: 'Nano Banana' },
+  { value: 'nano-banana-pro', label: 'Nano Banana Pro' },
 ];
 
 // Calculate grid dimensions from target count
@@ -31,11 +42,7 @@ const getGridDimensions = (count: number): { rows: number; cols: number } => {
   return grids[count] || { rows: 2, cols: 3 };
 };
 
-export function SplitGridSettingsModal({
-  nodeId,
-  nodeData,
-  onClose,
-}: SplitGridSettingsModalProps) {
+export function SplitGridSettingsModal({ nodeId, nodeData, onClose }: SplitGridSettingsModalProps) {
   const { updateNodeData, addNode, onConnect, addEdgeWithType, getNodeById } = useWorkflowStore();
 
   const [targetCount, setTargetCount] = useState(nodeData.targetCount);
@@ -46,7 +53,7 @@ export function SplitGridSettingsModal({
   const [useGoogleSearch, setUseGoogleSearch] = useState(nodeData.generateSettings.useGoogleSearch);
 
   const { rows, cols } = getGridDimensions(targetCount);
-  const isNanoBananaPro = model === "nano-banana-pro";
+  const isNanoBananaPro = model === 'nano-banana-pro';
 
   const handleCreate = useCallback(() => {
     const splitNode = getNodeById(nodeId);
@@ -55,7 +62,7 @@ export function SplitGridSettingsModal({
     // Node dimensions
     const imageInputWidth = 300;
     const imageInputHeight = 280;
-    const promptWidth = 320;
+    const _promptWidth = 320;
     const promptHeight = 220;
     const nanoBananaWidth = 300;
     const nanoBananaHeight = 300;
@@ -72,7 +79,7 @@ export function SplitGridSettingsModal({
     const startX = splitNode.position.x + 350;
     const startY = splitNode.position.y;
 
-    const childNodeIds: SplitGridNodeData["childNodeIds"] = [];
+    const childNodeIds: SplitGridNodeData['childNodeIds'] = [];
 
     // Create node clusters for each grid cell
     for (let i = 0; i < targetCount; i++) {
@@ -84,13 +91,13 @@ export function SplitGridSettingsModal({
       const clusterY = startY + row * (clusterHeight + clusterGap);
 
       // Create imageInput node
-      const imageInputId = addNode("imageInput", {
+      const imageInputId = addNode('imageInput', {
         x: clusterX,
         y: clusterY,
       });
 
       // Create nanoBanana node (to the right of imageInput)
-      const nanoBananaId = addNode("nanoBanana", {
+      const nanoBananaId = addNode('nanoBanana', {
         x: clusterX + imageInputWidth + horizontalGap,
         y: clusterY,
       });
@@ -104,7 +111,7 @@ export function SplitGridSettingsModal({
       });
 
       // Create prompt node (below imageInput)
-      const promptId = addNode("prompt", {
+      const promptId = addNode('prompt', {
         x: clusterX,
         y: clusterY + Math.max(imageInputHeight, nanoBananaHeight) + verticalGap,
       });
@@ -115,25 +122,28 @@ export function SplitGridSettingsModal({
       // Create connections: imageInput -> nanoBanana, prompt -> nanoBanana
       onConnect({
         source: imageInputId,
-        sourceHandle: "image",
+        sourceHandle: 'image',
         target: nanoBananaId,
-        targetHandle: "image",
+        targetHandle: 'image',
       });
 
       onConnect({
         source: promptId,
-        sourceHandle: "text",
+        sourceHandle: 'text',
         target: nanoBananaId,
-        targetHandle: "text",
+        targetHandle: 'text',
       });
 
       // Create reference edge from split node to imageInput (grey dotted line)
-      addEdgeWithType({
-        source: nodeId,
-        sourceHandle: "reference",
-        target: imageInputId,
-        targetHandle: "reference",
-      }, "reference");
+      addEdgeWithType(
+        {
+          source: nodeId,
+          sourceHandle: 'reference',
+          target: imageInputId,
+          targetHandle: 'reference',
+        },
+        'reference'
+      );
 
       childNodeIds.push({
         imageInput: imageInputId,
@@ -160,13 +170,25 @@ export function SplitGridSettingsModal({
 
     onClose();
   }, [
-    nodeId, targetCount, defaultPrompt, aspectRatio, resolution,
-    model, useGoogleSearch, rows, cols, getNodeById, addNode,
-    updateNodeData, onConnect, addEdgeWithType, onClose
+    nodeId,
+    targetCount,
+    defaultPrompt,
+    aspectRatio,
+    resolution,
+    model,
+    useGoogleSearch,
+    rows,
+    cols,
+    getNodeById,
+    addNode,
+    updateNodeData,
+    onConnect,
+    addEdgeWithType,
+    onClose,
   ]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       onClose();
     }
   };
@@ -177,16 +199,12 @@ export function SplitGridSettingsModal({
         className="bg-neutral-800 rounded-lg p-6 w-[520px] border border-neutral-700 shadow-xl"
         onKeyDown={handleKeyDown}
       >
-        <h2 className="text-lg font-semibold text-neutral-100 mb-4">
-          Split Grid Settings
-        </h2>
+        <h2 className="text-lg font-semibold text-neutral-100 mb-4">Split Grid Settings</h2>
 
         <div className="space-y-4">
           {/* Target count selector with visual preview */}
           <div>
-            <label className="block text-sm text-neutral-400 mb-2">
-              Number of Images
-            </label>
+            <label className="block text-sm text-neutral-400 mb-2">Number of Images</label>
             <div className="flex gap-2">
               {TARGET_COUNT_OPTIONS.map((count) => {
                 const { rows: r, cols: c } = getGridDimensions(count);
@@ -196,8 +214,8 @@ export function SplitGridSettingsModal({
                     onClick={() => setTargetCount(count)}
                     className={`flex-1 p-2 rounded border transition-colors ${
                       targetCount === count
-                        ? "border-blue-500 bg-blue-500/20"
-                        : "border-neutral-600 hover:border-neutral-500"
+                        ? 'border-blue-500 bg-blue-500/20'
+                        : 'border-neutral-600 hover:border-neutral-500'
                     }`}
                   >
                     <div
@@ -211,7 +229,7 @@ export function SplitGridSettingsModal({
                         <div
                           key={i}
                           className={`rounded-sm ${
-                            targetCount === count ? "bg-blue-400" : "bg-neutral-500"
+                            targetCount === count ? 'bg-blue-400' : 'bg-neutral-500'
                           }`}
                         />
                       ))}
@@ -228,9 +246,7 @@ export function SplitGridSettingsModal({
 
           {/* Default prompt */}
           <div>
-            <label className="block text-sm text-neutral-400 mb-1">
-              Default Prompt
-            </label>
+            <label className="block text-sm text-neutral-400 mb-1">Default Prompt</label>
             <textarea
               value={defaultPrompt}
               onChange={(e) => setDefaultPrompt(e.target.value)}
@@ -245,36 +261,34 @@ export function SplitGridSettingsModal({
 
           {/* Generate settings */}
           <div>
-            <label className="block text-sm text-neutral-400 mb-2">
-              Generate Node Settings
-            </label>
+            <label className="block text-sm text-neutral-400 mb-2">Generate Node Settings</label>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-neutral-500 mb-1">
-                  Model
-                </label>
+                <label className="block text-xs text-neutral-500 mb-1">Model</label>
                 <select
                   value={model}
                   onChange={(e) => setModel(e.target.value as ModelType)}
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-600 rounded text-neutral-100 text-sm focus:outline-none focus:border-neutral-500"
                 >
                   {MODELS.map((m) => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs text-neutral-500 mb-1">
-                  Aspect Ratio
-                </label>
+                <label className="block text-xs text-neutral-500 mb-1">Aspect Ratio</label>
                 <select
                   value={aspectRatio}
                   onChange={(e) => setAspectRatio(e.target.value as AspectRatio)}
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-600 rounded text-neutral-100 text-sm focus:outline-none focus:border-neutral-500"
                 >
                   {ASPECT_RATIOS.map((ar) => (
-                    <option key={ar} value={ar}>{ar}</option>
+                    <option key={ar} value={ar}>
+                      {ar}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -282,16 +296,16 @@ export function SplitGridSettingsModal({
               {isNanoBananaPro && (
                 <>
                   <div>
-                    <label className="block text-xs text-neutral-500 mb-1">
-                      Resolution
-                    </label>
+                    <label className="block text-xs text-neutral-500 mb-1">Resolution</label>
                     <select
                       value={resolution}
                       onChange={(e) => setResolution(e.target.value as Resolution)}
                       className="w-full px-3 py-2 bg-neutral-900 border border-neutral-600 rounded text-neutral-100 text-sm focus:outline-none focus:border-neutral-500"
                     >
                       {RESOLUTIONS.map((res) => (
-                        <option key={res} value={res}>{res}</option>
+                        <option key={res} value={res}>
+                          {res}
+                        </option>
                       ))}
                     </select>
                   </div>

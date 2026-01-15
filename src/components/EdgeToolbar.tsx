@@ -1,17 +1,14 @@
-"use client";
+'use client';
 
-import { useWorkflowStore } from "@/store/workflowStore";
-import { useMemo, useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 export function EdgeToolbar() {
   const { edges, toggleEdgePause, removeEdge } = useWorkflowStore();
   const [clickPosition, setClickPosition] = useState<{ x: number; y: number } | null>(null);
   const previousSelectedEdgeId = useRef<string | null>(null);
 
-  const selectedEdge = useMemo(
-    () => edges.find((edge) => edge.selected),
-    [edges]
-  );
+  const selectedEdge = useMemo(() => edges.find((edge) => edge.selected), [edges]);
 
   // Track mouse position when edge selection changes
   useEffect(() => {
@@ -59,17 +56,17 @@ export function EdgeToolbar() {
       style={{
         left: toolbarPosition.x,
         top: toolbarPosition.y,
-        transform: "translateX(-50%)",
+        transform: 'translateX(-50%)',
       }}
     >
       <button
         onClick={handleTogglePause}
         className={`p-1.5 rounded hover:bg-neutral-700 transition-colors ${
           hasPause
-            ? "text-amber-400 hover:text-amber-300"
-            : "text-neutral-400 hover:text-neutral-100"
+            ? 'text-amber-400 hover:text-amber-300'
+            : 'text-neutral-400 hover:text-neutral-100'
         }`}
-        title={hasPause ? "Remove pause" : "Add pause"}
+        title={hasPause ? 'Remove pause' : 'Add pause'}
       >
         {hasPause ? (
           // Play icon (resume)
@@ -88,7 +85,13 @@ export function EdgeToolbar() {
         className="p-1.5 rounded hover:bg-neutral-700 text-neutral-400 hover:text-red-400 transition-colors"
         title="Delete"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

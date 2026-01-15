@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { logger } from "@/utils/logger";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { type NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/utils/logger';
 
 export const maxDuration = 300; // 5 minute timeout for large workflow files
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         hasWorkflow: !!workflow,
       });
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -43,23 +43,23 @@ export async function POST(request: NextRequest) {
           directoryPath,
         });
         return NextResponse.json(
-          { success: false, error: "Path is not a directory" },
+          { success: false, error: 'Path is not a directory' },
           { status: 400 }
         );
       }
-    } catch (dirError) {
+    } catch (_dirError) {
       logger.warn('file.error', 'Workflow save failed: directory does not exist', {
         directoryPath,
       });
       return NextResponse.json(
-        { success: false, error: "Directory does not exist" },
+        { success: false, error: 'Directory does not exist' },
         { status: 400 }
       );
     }
 
     // Auto-create subfolders for inputs and generations
-    const inputsFolder = path.join(directoryPath, "inputs");
-    const generationsFolder = path.join(directoryPath, "generations");
+    const inputsFolder = path.join(directoryPath, 'inputs');
+    const generationsFolder = path.join(directoryPath, 'generations');
 
     try {
       await fs.mkdir(inputsFolder, { recursive: true });
@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize filename (remove special chars, ensure .json extension)
-    const safeName = filename.replace(/[^a-zA-Z0-9-_]/g, "_");
+    const safeName = filename.replace(/[^a-zA-Z0-9-_]/g, '_');
     const filePath = path.join(directoryPath, `${safeName}.json`);
 
     // Write workflow JSON
     const json = JSON.stringify(workflow, null, 2);
-    await fs.writeFile(filePath, json, "utf-8");
+    await fs.writeFile(filePath, json, 'utf-8');
 
     logger.info('file.save', 'Workflow saved successfully', {
       filePath,
@@ -91,14 +91,19 @@ export async function POST(request: NextRequest) {
       filePath,
     });
   } catch (error) {
-    logger.error('file.error', 'Failed to save workflow', {
-      directoryPath,
-      filename,
-    }, error instanceof Error ? error : undefined);
+    logger.error(
+      'file.error',
+      'Failed to save workflow',
+      {
+        directoryPath,
+        filename,
+      },
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Save failed",
+        error: error instanceof Error ? error.message : 'Save failed',
       },
       { status: 500 }
     );
@@ -107,7 +112,7 @@ export async function POST(request: NextRequest) {
 
 // GET: Validate directory path
 export async function GET(request: NextRequest) {
-  const directoryPath = request.nextUrl.searchParams.get("path");
+  const directoryPath = request.nextUrl.searchParams.get('path');
 
   logger.info('file.load', 'Directory validation request received', {
     directoryPath,
@@ -115,10 +120,7 @@ export async function GET(request: NextRequest) {
 
   if (!directoryPath) {
     logger.warn('file.load', 'Directory validation failed: missing path parameter');
-    return NextResponse.json(
-      { success: false, error: "Path parameter required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, error: 'Path parameter required' }, { status: 400 });
   }
 
   try {
@@ -134,7 +136,7 @@ export async function GET(request: NextRequest) {
       exists: true,
       isDirectory,
     });
-  } catch (error) {
+  } catch (_error) {
     logger.info('file.load', 'Directory does not exist', {
       directoryPath,
     });

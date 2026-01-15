@@ -33,7 +33,7 @@ export interface LogEntry {
   level: LogLevel;
   category: LogCategory;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   error?: {
     message: string;
     stack?: string;
@@ -48,15 +48,14 @@ export interface LogSession {
   entries: LogEntry[];
 }
 
-// Type for server-only operations
-type LoggerServer = {
+// Type for server-only operations (reserved for future use)
+type _LoggerServer = {
   saveSession: (session: LogSession) => Promise<void>;
   rotateLogFiles: () => Promise<void>;
 };
 
 class Logger {
   private currentSession: LogSession | null = null;
-  private isClient: boolean;
 
   constructor() {
     this.isClient = typeof window !== 'undefined';
@@ -110,7 +109,7 @@ class Logger {
     level: LogLevel,
     category: LogCategory,
     message: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     error?: Error
   ): void {
     const entry: LogEntry = {
@@ -145,15 +144,20 @@ class Logger {
   /**
    * Convenience methods
    */
-  info(category: LogCategory, message: string, context?: Record<string, any>): void {
+  info(category: LogCategory, message: string, context?: Record<string, unknown>): void {
     this.log('info', category, message, context);
   }
 
-  warn(category: LogCategory, message: string, context?: Record<string, any>): void {
+  warn(category: LogCategory, message: string, context?: Record<string, unknown>): void {
     this.log('warn', category, message, context);
   }
 
-  error(category: LogCategory, message: string, context?: Record<string, any>, error?: Error): void {
+  error(
+    category: LogCategory,
+    message: string,
+    context?: Record<string, unknown>,
+    error?: Error
+  ): void {
     this.log('error', category, message, context, error);
   }
 
@@ -176,20 +180,20 @@ class Logger {
   /**
    * Sanitize context to protect privacy and reduce log size
    */
-  private sanitizeContext(context: Record<string, any>): Record<string, any> {
-    const sanitized: Record<string, any> = {};
+  private sanitizeContext(context: Record<string, unknown>): Record<string, unknown> {
+    const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(context)) {
       // Truncate prompts to 200 characters
       if (key === 'prompt' && typeof value === 'string') {
-        sanitized[key] = value.length > 200 ? value.substring(0, 200) + '...[truncated]' : value;
+        sanitized[key] = value.length > 200 ? `${value.substring(0, 200)}...[truncated]` : value;
       }
       // Convert image data URIs to metadata
       else if (key === 'image' || key === 'images') {
         if (typeof value === 'string' && value.startsWith('data:image')) {
           sanitized[key] = this.extractImageMetadata(value);
         } else if (Array.isArray(value)) {
-          sanitized[key] = value.map(img =>
+          sanitized[key] = value.map((img) =>
             typeof img === 'string' && img.startsWith('data:image')
               ? this.extractImageMetadata(img)
               : img
@@ -230,7 +234,6 @@ class Logger {
       isDataURI: true,
     };
   }
-
 }
 
 // Export singleton instance

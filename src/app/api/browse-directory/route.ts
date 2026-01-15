@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { exec } from "child_process";
-import { promisify } from "util";
-import { writeFile, unlink } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
+import { exec } from 'node:child_process';
+import { unlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+import { NextResponse } from 'next/server';
 
 const execAsync = promisify(exec);
 
@@ -14,13 +14,13 @@ export async function GET() {
   try {
     let selectedPath: string | null = null;
 
-    if (platform === "darwin") {
+    if (platform === 'darwin') {
       // macOS: Use osascript to open folder picker
       const { stdout } = await execAsync(
         `osascript -e 'set folderPath to POSIX path of (choose folder with prompt "Select a folder to save workflows")' -e 'return folderPath'`
       );
       selectedPath = stdout.trim();
-    } else if (platform === "win32") {
+    } else if (platform === 'win32') {
       // Windows: Use the modern IFileOpenDialog (Vista+) for a nice folder picker
       // Write script to temp file to avoid escaping issues
       const psScript = `
@@ -70,7 +70,7 @@ if ($result) { Write-Output $result }
 
       const tempFile = join(tmpdir(), `browse-folder-${Date.now()}.ps1`);
       try {
-        await writeFile(tempFile, psScript, "utf-8");
+        await writeFile(tempFile, psScript, 'utf-8');
         const { stdout } = await execAsync(
           `powershell -NoProfile -ExecutionPolicy Bypass -File "${tempFile}"`,
           { timeout: 120000 }
@@ -78,9 +78,13 @@ if ($result) { Write-Output $result }
         selectedPath = stdout.trim();
       } finally {
         // Clean up temp file
-        try { await unlink(tempFile); } catch { /* ignore */ }
+        try {
+          await unlink(tempFile);
+        } catch {
+          /* ignore */
+        }
       }
-    } else if (platform === "linux") {
+    } else if (platform === 'linux') {
       // Linux: Try zenity (common on GNOME) or kdialog (KDE)
       try {
         const { stdout } = await execAsync(
@@ -98,8 +102,7 @@ if ($result) { Write-Output $result }
           return NextResponse.json(
             {
               success: false,
-              error:
-                "No supported dialog tool found. Please install zenity or kdialog.",
+              error: 'No supported dialog tool found. Please install zenity or kdialog.',
             },
             { status: 500 }
           );
@@ -122,9 +125,9 @@ if ($result) { Write-Output $result }
     }
 
     // Remove trailing slash/backslash if present (except for root paths like "/" or "C:\")
-    if (selectedPath.length > 1 && (selectedPath.endsWith("/") || selectedPath.endsWith("\\"))) {
+    if (selectedPath.length > 1 && (selectedPath.endsWith('/') || selectedPath.endsWith('\\'))) {
       // Don't remove trailing slash from Windows drive roots like "C:\"
-      if (!(platform === "win32" && /^[A-Za-z]:\\$/.test(selectedPath))) {
+      if (!(platform === 'win32' && /^[A-Za-z]:\\$/.test(selectedPath))) {
         selectedPath = selectedPath.slice(0, -1);
       }
     }
@@ -138,8 +141,7 @@ if ($result) { Write-Output $result }
     // Check if user cancelled (osascript returns error code when cancelled)
     if (
       error instanceof Error &&
-      (error.message.includes("User canceled") ||
-        error.message.includes("-128"))
+      (error.message.includes('User canceled') || error.message.includes('-128'))
     ) {
       return NextResponse.json({
         success: true,
@@ -151,8 +153,7 @@ if ($result) { Write-Output $result }
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to open dialog",
+        error: error instanceof Error ? error.message : 'Failed to open dialog',
       },
       { status: 500 }
     );

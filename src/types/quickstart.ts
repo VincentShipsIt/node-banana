@@ -1,4 +1,4 @@
-export type QuickstartView = "initial" | "templates" | "vibe";
+export type QuickstartView = 'initial' | 'templates' | 'vibe';
 
 export interface CommunityWorkflowMeta {
   id: string;

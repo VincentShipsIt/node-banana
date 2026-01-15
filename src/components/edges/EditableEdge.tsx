@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
 import {
   BaseEdge,
-  EdgeProps,
-  getSmoothStepPath,
+  type EdgeProps,
   getBezierPath,
+  getSmoothStepPath,
   useReactFlow,
-} from "@xyflow/react";
-import { useWorkflowStore } from "@/store/workflowStore";
-import { NanoBananaNodeData, WorkflowEdgeData } from "@/types";
+} from '@xyflow/react';
+import { useCallback, useMemo, useState } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
+import type { NanoBananaNodeData, WorkflowEdgeData } from '@/types';
 
 interface EdgeData extends WorkflowEdgeData {
   offsetX?: number;
@@ -18,10 +18,10 @@ interface EdgeData extends WorkflowEdgeData {
 
 // Colors for different connection types (dimmed for softer appearance)
 const EDGE_COLORS = {
-  image: "#0d9668", // Dimmed green for image connections
-  prompt: "#2563eb", // Dimmed blue for prompt connections
-  default: "#64748b", // Dimmed gray for unknown
-  pause: "#ea580c", // Dimmed orange for paused edges
+  image: '#0d9668', // Dimmed green for image connections
+  prompt: '#2563eb', // Dimmed blue for prompt connections
+  default: '#64748b', // Dimmed gray for unknown
+  pause: '#ea580c', // Dimmed orange for paused edges
 };
 
 export function EditableEdge({
@@ -64,9 +64,9 @@ export function EditableEdge({
   // Check if target node is a Generate node that's currently loading
   const isTargetLoading = useMemo(() => {
     const targetNode = nodes.find((n) => n.id === target);
-    if (targetNode?.type === "nanoBanana") {
+    if (targetNode?.type === 'nanoBanana') {
       const nodeData = targetNode.data as NanoBananaNodeData;
-      return nodeData.status === "loading";
+      return nodeData.status === 'loading';
     }
     return false;
   }, [target, nodes]);
@@ -76,21 +76,21 @@ export function EditableEdge({
     if (hasPause) return EDGE_COLORS.pause;
     // Use source handle to determine color (or target if source is not available)
     const handleType = sourceHandleId || targetHandleId;
-    if (handleType === "image") return EDGE_COLORS.image;
-    if (handleType === "prompt") return EDGE_COLORS.prompt;
+    if (handleType === 'image') return EDGE_COLORS.image;
+    if (handleType === 'prompt') return EDGE_COLORS.prompt;
     return EDGE_COLORS.default;
   }, [hasPause, sourceHandleId, targetHandleId]);
 
   // Generate a unique gradient ID based on edge color and selection state
   const gradientId = useMemo(() => {
-    const colorKey = hasPause ? "pause" : (sourceHandleId || targetHandleId || "default");
-    const selectionKey = isConnectedToSelection ? "active" : "dimmed";
+    const colorKey = hasPause ? 'pause' : sourceHandleId || targetHandleId || 'default';
+    const selectionKey = isConnectedToSelection ? 'active' : 'dimmed';
     return `edge-gradient-${colorKey}-${selectionKey}-${id}`;
   }, [hasPause, sourceHandleId, targetHandleId, isConnectedToSelection, id]);
 
   // Calculate the path based on edge style
-  const [edgePath, labelX, labelY] = useMemo(() => {
-    if (edgeStyle === "curved") {
+  const [edgePath, _labelX, _labelY] = useMemo(() => {
+    if (edgeStyle === 'curved') {
       return getBezierPath({
         sourceX,
         sourceY,
@@ -116,9 +116,9 @@ export function EditableEdge({
 
   // Calculate handle positions on the path segments (only for angular mode)
   const handlePositions = useMemo(() => {
-    if (edgeStyle === "curved") return [];
+    if (edgeStyle === 'curved') return [];
 
-    const handles: { x: number; y: number; direction: "horizontal" | "vertical" }[] = [];
+    const handles: { x: number; y: number; direction: 'horizontal' | 'vertical' }[] = [];
 
     const midX = (sourceX + targetX) / 2 + offsetX;
     const midY = (sourceY + targetY) / 2 + offsetY;
@@ -128,7 +128,7 @@ export function EditableEdge({
       handles.push({
         x: midX,
         y: midY,
-        direction: "horizontal",
+        direction: 'horizontal',
       });
     }
 
@@ -136,7 +136,7 @@ export function EditableEdge({
   }, [edgeStyle, sourceX, sourceY, targetX, targetY, offsetX, offsetY]);
 
   const handleMouseDown = useCallback(
-    (e: React.MouseEvent, direction: "horizontal" | "vertical") => {
+    (e: React.MouseEvent, direction: 'horizontal' | 'vertical') => {
       e.stopPropagation();
       e.preventDefault();
       setIsDragging(true);
@@ -157,8 +157,8 @@ export function EditableEdge({
                 ...edge,
                 data: {
                   ...edge.data,
-                  offsetX: direction === "horizontal" ? startOffsetX + deltaX : startOffsetX,
-                  offsetY: direction === "vertical" ? startOffsetY + deltaY : startOffsetY,
+                  offsetX: direction === 'horizontal' ? startOffsetX + deltaX : startOffsetX,
+                  offsetY: direction === 'vertical' ? startOffsetY + deltaY : startOffsetY,
                 },
               };
             }
@@ -169,12 +169,12 @@ export function EditableEdge({
 
       const handleMouseUp = () => {
         setIsDragging(false);
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
       };
 
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
     },
     [id, offsetX, offsetY, setEdges]
   );
@@ -185,8 +185,16 @@ export function EditableEdge({
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor={edgeColor} stopOpacity={isConnectedToSelection ? 1 : 0.25} />
-          <stop offset="50%" stopColor={edgeColor} stopOpacity={isConnectedToSelection ? 0.55 : 0.1} />
-          <stop offset="100%" stopColor={edgeColor} stopOpacity={isConnectedToSelection ? 1 : 0.25} />
+          <stop
+            offset="50%"
+            stopColor={edgeColor}
+            stopOpacity={isConnectedToSelection ? 0.55 : 0.1}
+          />
+          <stop
+            offset="100%"
+            stopColor={edgeColor}
+            stopOpacity={isConnectedToSelection ? 1 : 0.25}
+          />
         </linearGradient>
       </defs>
 
@@ -198,8 +206,8 @@ export function EditableEdge({
           ...style,
           stroke: `url(#${gradientId})`,
           strokeWidth: 3,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
         }}
       />
 
@@ -216,7 +224,7 @@ export function EditableEdge({
             strokeLinejoin="round"
             style={{
               opacity: 0.2,
-              filter: "blur(6px)",
+              filter: 'blur(6px)',
             }}
           />
           {/* Animated flowing pulse using stroke-dasharray */}
@@ -229,7 +237,7 @@ export function EditableEdge({
             strokeLinejoin="round"
             strokeDasharray="20 30"
             style={{
-              animation: "flowPulse 1s linear infinite",
+              animation: 'flowPulse 1s linear infinite',
             }}
           />
         </>
@@ -248,12 +256,7 @@ export function EditableEdge({
       {hasPause && (
         <g transform={`translate(${targetX - 24}, ${targetY})`}>
           {/* Background circle */}
-          <circle
-            r={10}
-            fill="#27272a"
-            stroke={edgeColor}
-            strokeWidth={2}
-          />
+          <circle r={10} fill="#27272a" stroke={edgeColor} strokeWidth={2} />
           {/* Pause bars */}
           <rect x={-4} y={-5} width={2.5} height={10} fill={edgeColor} rx={1} />
           <rect x={1.5} y={-5} width={2.5} height={10} fill={edgeColor} rx={1} />
@@ -272,7 +275,7 @@ export function EditableEdge({
               stroke="#3b82f6"
               strokeWidth={2}
               style={{
-                cursor: handle.direction === "horizontal" ? "ew-resize" : "ns-resize",
+                cursor: handle.direction === 'horizontal' ? 'ew-resize' : 'ns-resize',
               }}
               onMouseDown={(e) => handleMouseDown(e, handle.direction)}
             />

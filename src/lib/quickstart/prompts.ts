@@ -1,12 +1,9 @@
-import { ContentLevel } from "./templates";
+import type { ContentLevel } from './templates';
 
 /**
  * Build a comprehensive prompt for Gemini to generate a workflow
  */
-export function buildQuickstartPrompt(
-  description: string,
-  contentLevel: ContentLevel
-): string {
+export function buildQuickstartPrompt(description: string, contentLevel: ContentLevel): string {
   const timestamp = Date.now();
 
   return `You are a workflow designer for Node Banana, a visual node-based AI image generation tool. Your task is to create a workflow JSON based on the user's description.
@@ -32,7 +29,7 @@ Purpose: Text prompts that feed into generation or LLM nodes
 - Outputs: "text" handle (blue, right side of node)
 - Data structure:
   {
-    "prompt": "${contentLevel === "empty" ? "" : contentLevel === "minimal" ? "Enter your prompt here..." : "Your detailed prompt text"}",
+    "prompt": "${contentLevel === 'empty' ? '' : contentLevel === 'minimal' ? 'Enter your prompt here...' : 'Your detailed prompt text'}",
     "customTitle": "Descriptive name for this prompt"
   }
 
@@ -288,9 +285,9 @@ Use format: "{type}-{number}" starting from 1
 Examples: "imageInput-1", "imageInput-2", "prompt-1", "nanoBanana-1"
 
 ## Content Level: ${contentLevel.toUpperCase()}
-${contentLevel === "empty" ? "- Leave ALL prompt fields completely empty (empty string)" : ""}
-${contentLevel === "minimal" ? '- Add brief placeholder prompts like "Describe your scene here..." or "Enter style instructions..."' : ""}
-${contentLevel === "full" ? "- Add complete, detailed example prompts that demonstrate the workflow's purpose" : ""}
+${contentLevel === 'empty' ? '- Leave ALL prompt fields completely empty (empty string)' : ''}
+${contentLevel === 'minimal' ? '- Add brief placeholder prompts like "Describe your scene here..." or "Enter style instructions..."' : ''}
+${contentLevel === 'full' ? "- Add complete, detailed example prompts that demonstrate the workflow's purpose" : ''}
 
 ## COMPLETE EXAMPLE WORKFLOW
 

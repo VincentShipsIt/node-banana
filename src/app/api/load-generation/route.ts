@@ -1,9 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { logger } from "@/utils/logger";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { type NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/utils/logger';
 
-// POST: Load a generated image from the generations folder by ID
+// Supported file extensions
+const SUPPORTED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'mp4', 'webm', 'mov'];
+
+// Video extensions
+const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov'];
+
+// Extension to MIME type mapping
+const EXT_TO_MIME: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
+};
+
+// POST: Load a generated image or video from the generations folder by ID
 export async function POST(request: NextRequest) {
   let directoryPath: string | undefined;
   let imageId: string | undefined;
@@ -23,7 +41,7 @@ export async function POST(request: NextRequest) {
         hasImageId: !!imageId,
       });
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -36,63 +54,90 @@ export async function POST(request: NextRequest) {
           directoryPath,
         });
         return NextResponse.json(
-          { success: false, error: "Path is not a directory" },
+          { success: false, error: 'Path is not a directory' },
           { status: 400 }
         );
       }
-    } catch (dirError) {
+    } catch (_dirError) {
       logger.warn('file.error', 'Generation load failed: directory does not exist', {
         directoryPath,
       });
       return NextResponse.json(
-        { success: false, error: "Directory does not exist" },
+        { success: false, error: 'Directory does not exist' },
         { status: 400 }
       );
     }
 
-    // Construct file path (ID is the filename without extension)
-    const filename = `${imageId}.png`;
-    const filePath = path.join(directoryPath, filename);
+    // Find the file by ID with any supported extension
+    let foundExtension: string | null = null;
+    let filePath: string | null = null;
 
-    // Check if file exists
-    try {
-      await fs.access(filePath);
-    } catch {
-      logger.warn('file.error', 'Generation load failed: file not found', {
-        filePath,
-      });
-      return NextResponse.json(
-        { success: false, error: "Image file not found" },
-        { status: 404 }
-      );
+    for (const ext of SUPPORTED_EXTENSIONS) {
+      const candidatePath = path.join(directoryPath, `${imageId}.${ext}`);
+      try {
+        await fs.access(candidatePath);
+        foundExtension = ext;
+        filePath = candidatePath;
+        break;
+      } catch {
+        // File doesn't exist with this extension, continue
+      }
     }
 
-    // Read the image file
+    if (!foundExtension || !filePath) {
+      logger.warn('file.error', 'Generation load failed: file not found', {
+        imageId,
+        directoryPath,
+      });
+      return NextResponse.json({ success: false, error: 'File not found' }, { status: 404 });
+    }
+
+    // Read the file
     const buffer = await fs.readFile(filePath);
 
     // Convert to base64 data URL
-    const base64 = buffer.toString("base64");
-    const dataUrl = `data:image/png;base64,${base64}`;
+    const mimeType = EXT_TO_MIME[foundExtension] || 'application/octet-stream';
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    // Determine content type
+    const isVideo = VIDEO_EXTENSIONS.includes(foundExtension);
+    const contentType = isVideo ? 'video' : 'image';
 
     logger.info('file.load', 'Generation loaded successfully', {
       filePath,
-      filename,
+      extension: foundExtension,
+      contentType,
       fileSize: buffer.length,
     });
 
-    return NextResponse.json({
+    // Return appropriate response field based on content type
+    const response: Record<string, unknown> = {
       success: true,
-      image: dataUrl,
-    });
+      contentType,
+    };
+
+    if (isVideo) {
+      response.video = dataUrl;
+    } else {
+      response.image = dataUrl;
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
-    logger.error('file.error', 'Failed to load generation', {
-      directoryPath,
-      imageId,
-    }, error instanceof Error ? error : undefined);
+    logger.error(
+      'file.error',
+      'Failed to load generation',
+      {
+        directoryPath,
+        imageId,
+      },
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Load failed",
+        error: error instanceof Error ? error.message : 'Load failed',
       },
       { status: 500 }
     );

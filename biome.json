@@ -20,6 +20,12 @@
       "suspicious": {
         "noArrayIndexKey": "off",
         "noExplicitAny": "warn"
+      },
+      "a11y": {
+        "recommended": false
+      },
+      "performance": {
+        "noImgElement": "off"
       }
     }
   },
@@ -48,7 +54,8 @@
       "!!.turbo",
       "!!coverage",
       "!!**/*.min.js",
-      "!!**/*.min.css"
+      "!!**/*.min.css",
+      "!!**/*.css"
     ]
   }
 }

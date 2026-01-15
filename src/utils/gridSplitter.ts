@@ -34,15 +34,15 @@ export interface GridCandidate {
 // Common photo/video aspect ratios (width:height)
 // Ordered by likelihood in contact sheets
 const COMMON_ASPECT_RATIOS = [
-  16 / 9,   // 1.778 - Widescreen video (very common for storyboards)
-  4 / 3,    // 1.333 - Standard photo/video
-  3 / 2,    // 1.5 - DSLR photos
-  1.85,     // 1.85:1 - Cinema flat
-  2.39,     // 2.39:1 - Cinema scope
-  1,        // 1:1 - Square
-  9 / 16,   // 0.5625 - Portrait video
-  3 / 4,    // 0.75 - Portrait photo
-  2 / 3,    // 0.667 - Portrait DSLR
+  16 / 9, // 1.778 - Widescreen video (very common for storyboards)
+  4 / 3, // 1.333 - Standard photo/video
+  3 / 2, // 1.5 - DSLR photos
+  1.85, // 1.85:1 - Cinema flat
+  2.39, // 2.39:1 - Cinema scope
+  1, // 1:1 - Square
+  9 / 16, // 0.5625 - Portrait video
+  3 / 4, // 0.75 - Portrait photo
+  2 / 3, // 0.667 - Portrait DSLR
 ];
 
 /**
@@ -51,15 +51,15 @@ const COMMON_ASPECT_RATIOS = [
 export async function detectGrid(imageDataUrl: string): Promise<GridDetectionResult> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
 
     img.onload = () => {
       try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
         if (!ctx) {
-          reject(new Error("Could not get canvas context"));
+          reject(new Error('Could not get canvas context'));
           return;
         }
 
@@ -76,7 +76,7 @@ export async function detectGrid(imageDataUrl: string): Promise<GridDetectionRes
     };
 
     img.onerror = () => {
-      reject(new Error("Failed to load image"));
+      reject(new Error('Failed to load image'));
     };
 
     img.src = imageDataUrl;
@@ -125,7 +125,7 @@ export async function detectGridWithDimensions(
 ): Promise<GridDetectionResult> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
 
     img.onload = () => {
       const result = createGridForDimensions(img.width, img.height, rows, cols);
@@ -133,7 +133,7 @@ export async function detectGridWithDimensions(
     };
 
     img.onerror = () => {
-      reject(new Error("Failed to load image"));
+      reject(new Error('Failed to load image'));
     };
 
     img.src = imageDataUrl;
@@ -181,9 +181,10 @@ export function getGridCandidates(width: number, height: number): GridCandidate[
       // Score 2: How well does the grid shape match the image shape?
       // A 3x2 grid in a 3:2 image is more likely than a 2x3 grid
       const gridAspectRatio = cols / rows;
-      const layoutRatio = imageAspectRatio > gridAspectRatio
-        ? imageAspectRatio / gridAspectRatio
-        : gridAspectRatio / imageAspectRatio;
+      const layoutRatio =
+        imageAspectRatio > gridAspectRatio
+          ? imageAspectRatio / gridAspectRatio
+          : gridAspectRatio / imageAspectRatio;
       const layoutScore = Math.exp(-(layoutRatio - 1) * 2);
 
       // Score 3: Prefer grids with more cells (contact sheets usually have many)
@@ -196,10 +197,10 @@ export function getGridCandidates(width: number, height: number): GridCandidate[
 
       // Combined score (higher is better)
       const score =
-        cellARScore * 0.45 +      // Cell aspect ratio is most important
-        layoutScore * 0.25 +      // Grid should match image shape
-        cellCountScore * 0.15 +   // Prefer more cells
-        gridSymmetry * 0.15;      // Prefer symmetric grids
+        cellARScore * 0.45 + // Cell aspect ratio is most important
+        layoutScore * 0.25 + // Grid should match image shape
+        cellCountScore * 0.15 + // Prefer more cells
+        gridSymmetry * 0.15; // Prefer symmetric grids
 
       candidates.push({
         rows,
@@ -253,9 +254,6 @@ function analyzeGridFromImageData(imageData: ImageData): GridDetectionResult {
       bestCandidate = candidate;
     }
   }
-
-  console.log(`[GridSplitter] Best candidate: ${bestCandidate.rows}x${bestCandidate.cols}, ` +
-    `cell AR: ${bestCandidate.cellAspectRatio.toFixed(2)}, score: ${bestCandidate.score.toFixed(3)}`);
 
   // Build the grid cells
   const result = createGridForDimensions(width, height, bestCandidate.rows, bestCandidate.cols);
@@ -406,18 +404,18 @@ export async function splitImage(
 ): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
 
     img.onload = () => {
       try {
         const results: string[] = [];
 
         for (const cell of grid.cells) {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
 
           if (!ctx) {
-            reject(new Error("Could not get canvas context"));
+            reject(new Error('Could not get canvas context'));
             return;
           }
 
@@ -436,7 +434,7 @@ export async function splitImage(
             cell.height
           );
 
-          results.push(canvas.toDataURL("image/png"));
+          results.push(canvas.toDataURL('image/png'));
         }
 
         resolve(results);
@@ -446,7 +444,7 @@ export async function splitImage(
     };
 
     img.onerror = () => {
-      reject(new Error("Failed to load image"));
+      reject(new Error('Failed to load image'));
     };
 
     img.src = imageDataUrl;

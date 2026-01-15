@@ -1,5 +1,14 @@
-import { WorkflowNode, WorkflowNodeData } from "@/types";
-import { WorkflowFile } from "@/store/workflowStore";
+import crypto from 'node:crypto';
+import type { WorkflowFile } from '@/store/workflowStore';
+import type { WorkflowNode, WorkflowNodeData } from '@/types';
+
+/**
+ * Compute MD5 hash of image content for deduplication
+ * Consistent with save-generation API (Phase 13 decision)
+ */
+function computeContentHash(data: string): string {
+  return crypto.createHash('md5').update(data).digest('hex');
+}
 
 /**
  * Generate a unique image ID for external storage
@@ -14,7 +23,7 @@ export function generateImageId(): string {
  * Check if a string is a base64 data URL
  */
 function isBase64DataUrl(str: string | null | undefined): str is string {
-  return typeof str === "string" && str.startsWith("data:");
+  return typeof str === 'string' && str.startsWith('data:');
 }
 
 /**
@@ -51,35 +60,49 @@ async function externalizeNodeImages(
   let newData: WorkflowNodeData;
 
   switch (node.type) {
-    case "imageInput": {
-      const d = data as import("@/types").ImageInputNodeData;
-      if (isBase64DataUrl(d.image)) {
-        const imageId = await saveImageAndGetId(d.image, workflowPath, savedImageIds, "inputs");
-        newData = {
-          ...d,
-          image: null,
-          imageRef: imageId,
-        };
+    case 'imageInput': {
+      const d = data as import('@/types').ImageInputNodeData;
+      // Skip if already has a valid imageRef (prevents duplicates on re-save after hydration)
+      if (d.imageRef && isBase64DataUrl(d.image)) {
+        newData = { ...d, image: null };
+      } else if (isBase64DataUrl(d.image)) {
+        const imageId = await saveImageAndGetId(d.image, workflowPath, savedImageIds, 'inputs');
+        newData = { ...d, image: null, imageRef: imageId };
       } else {
         newData = d;
       }
       break;
     }
 
-    case "annotation": {
-      const d = data as import("@/types").AnnotationNodeData;
+    case 'annotation': {
+      const d = data as import('@/types').AnnotationNodeData;
       let sourceImageRef = d.sourceImageRef;
       let outputImageRef = d.outputImageRef;
       let sourceImage = d.sourceImage;
       let outputImage = d.outputImage;
 
       // Annotation images are user-created, save to inputs
-      if (isBase64DataUrl(d.sourceImage)) {
-        sourceImageRef = await saveImageAndGetId(d.sourceImage, workflowPath, savedImageIds, "inputs");
+      // Skip if already has ref (prevents duplicates on re-save after hydration)
+      if (d.sourceImageRef && isBase64DataUrl(d.sourceImage)) {
+        sourceImage = null;
+      } else if (isBase64DataUrl(d.sourceImage)) {
+        sourceImageRef = await saveImageAndGetId(
+          d.sourceImage,
+          workflowPath,
+          savedImageIds,
+          'inputs'
+        );
         sourceImage = null;
       }
-      if (isBase64DataUrl(d.outputImage)) {
-        outputImageRef = await saveImageAndGetId(d.outputImage, workflowPath, savedImageIds, "inputs");
+      if (d.outputImageRef && isBase64DataUrl(d.outputImage)) {
+        outputImage = null;
+      } else if (isBase64DataUrl(d.outputImage)) {
+        outputImageRef = await saveImageAndGetId(
+          d.outputImage,
+          workflowPath,
+          savedImageIds,
+          'inputs'
+        );
         outputImage = null;
       }
 
@@ -93,25 +116,38 @@ async function externalizeNodeImages(
       break;
     }
 
-    case "nanoBanana": {
-      const d = data as import("@/types").NanoBananaNodeData;
+    case 'nanoBanana': {
+      const d = data as import('@/types').NanoBananaNodeData;
       let outputImageRef = d.outputImageRef;
       let outputImage = d.outputImage;
-      const inputImageRefs: string[] = [];
+      const inputImageRefs = d.inputImageRefs ? [...d.inputImageRefs] : [];
       const inputImages: string[] = [];
 
       // Handle output image - AI generated, save to generations
-      if (isBase64DataUrl(d.outputImage)) {
-        outputImageRef = await saveImageAndGetId(d.outputImage, workflowPath, savedImageIds, "generations");
+      // Skip if already has ref (prevents duplicates on re-save after hydration)
+      if (d.outputImageRef && isBase64DataUrl(d.outputImage)) {
+        outputImage = null;
+      } else if (isBase64DataUrl(d.outputImage)) {
+        outputImageRef = await saveImageAndGetId(
+          d.outputImage,
+          workflowPath,
+          savedImageIds,
+          'generations'
+        );
         outputImage = null;
       }
 
       // Handle input images array (these come from connected nodes, save to inputs if present)
-      for (const img of d.inputImages) {
-        if (isBase64DataUrl(img)) {
-          const ref = await saveImageAndGetId(img, workflowPath, savedImageIds, "inputs");
-          inputImageRefs.push(ref);
-          inputImages.push(""); // Empty placeholder
+      // Skip if corresponding inputImageRef already exists
+      for (let i = 0; i < d.inputImages.length; i++) {
+        const img = d.inputImages[i];
+        const existingRef = d.inputImageRefs?.[i];
+        if (existingRef && isBase64DataUrl(img)) {
+          inputImages.push(''); // Already has ref, just clear the base64
+        } else if (isBase64DataUrl(img)) {
+          const ref = await saveImageAndGetId(img, workflowPath, savedImageIds, 'inputs');
+          inputImageRefs[i] = ref;
+          inputImages.push(''); // Empty placeholder
         } else {
           inputImages.push(img);
         }
@@ -119,7 +155,8 @@ async function externalizeNodeImages(
 
       newData = {
         ...d,
-        inputImages: inputImages.length > 0 && inputImages.every(i => i === "") ? [] : inputImages,
+        inputImages:
+          inputImages.length > 0 && inputImages.every((i) => i === '') ? [] : inputImages,
         inputImageRefs: inputImageRefs.length > 0 ? inputImageRefs : undefined,
         outputImage,
         outputImageRef,
@@ -127,17 +164,22 @@ async function externalizeNodeImages(
       break;
     }
 
-    case "llmGenerate": {
-      const d = data as import("@/types").LLMGenerateNodeData;
-      const inputImageRefs: string[] = [];
+    case 'llmGenerate': {
+      const d = data as import('@/types').LLMGenerateNodeData;
+      const inputImageRefs = d.inputImageRefs ? [...d.inputImageRefs] : [];
       const inputImages: string[] = [];
 
       // Handle input images array (save to inputs)
-      for (const img of d.inputImages) {
-        if (isBase64DataUrl(img)) {
-          const ref = await saveImageAndGetId(img, workflowPath, savedImageIds, "inputs");
-          inputImageRefs.push(ref);
-          inputImages.push(""); // Empty placeholder
+      // Skip if corresponding inputImageRef already exists
+      for (let i = 0; i < d.inputImages.length; i++) {
+        const img = d.inputImages[i];
+        const existingRef = d.inputImageRefs?.[i];
+        if (existingRef && isBase64DataUrl(img)) {
+          inputImages.push(''); // Already has ref, just clear the base64
+        } else if (isBase64DataUrl(img)) {
+          const ref = await saveImageAndGetId(img, workflowPath, savedImageIds, 'inputs');
+          inputImageRefs[i] = ref;
+          inputImages.push(''); // Empty placeholder
         } else {
           inputImages.push(img);
         }
@@ -145,38 +187,47 @@ async function externalizeNodeImages(
 
       newData = {
         ...d,
-        inputImages: inputImages.length > 0 && inputImages.every(i => i === "") ? [] : inputImages,
+        inputImages:
+          inputImages.length > 0 && inputImages.every((i) => i === '') ? [] : inputImages,
         inputImageRefs: inputImageRefs.length > 0 ? inputImageRefs : undefined,
       };
       break;
     }
 
-    case "output": {
-      const d = data as import("@/types").OutputNodeData;
+    case 'output': {
+      const d = data as import('@/types').OutputNodeData;
       // Output displays generated content, save to generations
-      if (isBase64DataUrl(d.image)) {
-        const imageId = await saveImageAndGetId(d.image, workflowPath, savedImageIds, "generations");
-        newData = {
-          ...d,
-          image: null,
-          imageRef: imageId,
-        };
+      // Skip if already has ref (prevents duplicates on re-save after hydration)
+      if (d.imageRef && isBase64DataUrl(d.image)) {
+        newData = { ...d, image: null };
+      } else if (isBase64DataUrl(d.image)) {
+        const imageId = await saveImageAndGetId(
+          d.image,
+          workflowPath,
+          savedImageIds,
+          'generations'
+        );
+        newData = { ...d, image: null, imageRef: imageId };
       } else {
         newData = d;
       }
       break;
     }
 
-    case "splitGrid": {
-      const d = data as import("@/types").SplitGridNodeData;
+    case 'splitGrid': {
+      const d = data as import('@/types').SplitGridNodeData;
       // SplitGrid source is input content, save to inputs
-      if (isBase64DataUrl(d.sourceImage)) {
-        const imageId = await saveImageAndGetId(d.sourceImage, workflowPath, savedImageIds, "inputs");
-        newData = {
-          ...d,
-          sourceImage: null,
-          sourceImageRef: imageId,
-        };
+      // Skip if already has ref (prevents duplicates on re-save after hydration)
+      if (d.sourceImageRef && isBase64DataUrl(d.sourceImage)) {
+        newData = { ...d, sourceImage: null };
+      } else if (isBase64DataUrl(d.sourceImage)) {
+        const imageId = await saveImageAndGetId(
+          d.sourceImage,
+          workflowPath,
+          savedImageIds,
+          'inputs'
+        );
+        newData = { ...d, sourceImage: null, sourceImageRef: imageId };
       } else {
         newData = d;
       }
@@ -201,14 +252,11 @@ async function saveImageAndGetId(
   imageData: string,
   workflowPath: string,
   savedImageIds: Map<string, string>,
-  folder: "inputs" | "generations" = "inputs"
+  folder: 'inputs' | 'generations' = 'inputs'
 ): Promise<string> {
-  // Create a hash using length + samples from different parts of the data
-  // This avoids issues where all images of the same format have identical headers
+  // Use MD5 hash for reliable deduplication (consistent with save-generation API, Phase 13 decision)
   // Include folder in hash so same image in different folders gets different IDs
-  const len = imageData.length;
-  const mid = Math.floor(len / 2);
-  const hash = `${folder}-${len}-${imageData.substring(50, 100)}-${imageData.substring(mid, mid + 50)}-${imageData.substring(Math.max(0, len - 50))}`;
+  const hash = `${folder}-${computeContentHash(imageData)}`;
 
   if (savedImageIds.has(hash)) {
     return savedImageIds.get(hash)!;
@@ -216,9 +264,9 @@ async function saveImageAndGetId(
 
   const imageId = generateImageId();
 
-  const response = await fetch("/api/workflow-images", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const response = await fetch('/api/workflow-images', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       workflowPath,
       imageId,
@@ -271,10 +319,10 @@ async function hydrateNodeImages(
   let newData: WorkflowNodeData;
 
   switch (node.type) {
-    case "imageInput": {
-      const d = data as import("@/types").ImageInputNodeData;
+    case 'imageInput': {
+      const d = data as import('@/types').ImageInputNodeData;
       if (d.imageRef && !d.image) {
-        const image = await loadImageById(d.imageRef, workflowPath, loadedImages, "inputs");
+        const image = await loadImageById(d.imageRef, workflowPath, loadedImages, 'inputs');
         newData = {
           ...d,
           image,
@@ -285,16 +333,16 @@ async function hydrateNodeImages(
       break;
     }
 
-    case "annotation": {
-      const d = data as import("@/types").AnnotationNodeData;
+    case 'annotation': {
+      const d = data as import('@/types').AnnotationNodeData;
       let sourceImage = d.sourceImage;
       let outputImage = d.outputImage;
 
       if (d.sourceImageRef && !d.sourceImage) {
-        sourceImage = await loadImageById(d.sourceImageRef, workflowPath, loadedImages, "inputs");
+        sourceImage = await loadImageById(d.sourceImageRef, workflowPath, loadedImages, 'inputs');
       }
       if (d.outputImageRef && !d.outputImage) {
-        outputImage = await loadImageById(d.outputImageRef, workflowPath, loadedImages, "inputs");
+        outputImage = await loadImageById(d.outputImageRef, workflowPath, loadedImages, 'inputs');
       }
 
       newData = {
@@ -305,13 +353,18 @@ async function hydrateNodeImages(
       break;
     }
 
-    case "nanoBanana": {
-      const d = data as import("@/types").NanoBananaNodeData;
+    case 'nanoBanana': {
+      const d = data as import('@/types').NanoBananaNodeData;
       let outputImage = d.outputImage;
       const inputImages = [...d.inputImages];
 
       if (d.outputImageRef && !d.outputImage) {
-        outputImage = await loadImageById(d.outputImageRef, workflowPath, loadedImages, "generations");
+        outputImage = await loadImageById(
+          d.outputImageRef,
+          workflowPath,
+          loadedImages,
+          'generations'
+        );
       }
 
       // Hydrate input images from refs
@@ -319,7 +372,7 @@ async function hydrateNodeImages(
         for (let i = 0; i < d.inputImageRefs.length; i++) {
           const ref = d.inputImageRefs[i];
           if (ref) {
-            inputImages[i] = await loadImageById(ref, workflowPath, loadedImages, "inputs");
+            inputImages[i] = await loadImageById(ref, workflowPath, loadedImages, 'inputs');
           }
         }
       }
@@ -332,8 +385,8 @@ async function hydrateNodeImages(
       break;
     }
 
-    case "llmGenerate": {
-      const d = data as import("@/types").LLMGenerateNodeData;
+    case 'llmGenerate': {
+      const d = data as import('@/types').LLMGenerateNodeData;
       const inputImages = [...d.inputImages];
 
       // Hydrate input images from refs
@@ -341,7 +394,7 @@ async function hydrateNodeImages(
         for (let i = 0; i < d.inputImageRefs.length; i++) {
           const ref = d.inputImageRefs[i];
           if (ref) {
-            inputImages[i] = await loadImageById(ref, workflowPath, loadedImages, "inputs");
+            inputImages[i] = await loadImageById(ref, workflowPath, loadedImages, 'inputs');
           }
         }
       }
@@ -353,10 +406,10 @@ async function hydrateNodeImages(
       break;
     }
 
-    case "output": {
-      const d = data as import("@/types").OutputNodeData;
+    case 'output': {
+      const d = data as import('@/types').OutputNodeData;
       if (d.imageRef && !d.image) {
-        const image = await loadImageById(d.imageRef, workflowPath, loadedImages, "generations");
+        const image = await loadImageById(d.imageRef, workflowPath, loadedImages, 'generations');
         newData = {
           ...d,
           image,
@@ -367,10 +420,15 @@ async function hydrateNodeImages(
       break;
     }
 
-    case "splitGrid": {
-      const d = data as import("@/types").SplitGridNodeData;
+    case 'splitGrid': {
+      const d = data as import('@/types').SplitGridNodeData;
       if (d.sourceImageRef && !d.sourceImage) {
-        const sourceImage = await loadImageById(d.sourceImageRef, workflowPath, loadedImages, "inputs");
+        const sourceImage = await loadImageById(
+          d.sourceImageRef,
+          workflowPath,
+          loadedImages,
+          'inputs'
+        );
         newData = {
           ...d,
           sourceImage,
@@ -399,7 +457,7 @@ async function loadImageById(
   imageId: string,
   workflowPath: string,
   loadedImages: Map<string, string>,
-  folder?: "inputs" | "generations"
+  folder?: 'inputs' | 'generations'
 ): Promise<string> {
   if (loadedImages.has(imageId)) {
     return loadedImages.get(imageId)!;
@@ -410,7 +468,7 @@ async function loadImageById(
     imageId,
   });
   if (folder) {
-    params.set("folder", folder);
+    params.set('folder', folder);
   }
 
   const response = await fetch(`/api/workflow-images?${params.toString()}`);
@@ -419,7 +477,7 @@ async function loadImageById(
 
   if (!result.success) {
     console.error(`Failed to load image ${imageId}: ${result.error}`);
-    return ""; // Return empty string on error to avoid breaking the workflow
+    return ''; // Return empty string on error to avoid breaking the workflow
   }
 
   loadedImages.set(imageId, result.image);

@@ -1,15 +1,11 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import {
-  BaseEdge,
-  EdgeProps,
-  getBezierPath,
-} from "@xyflow/react";
-import { useWorkflowStore } from "@/store/workflowStore";
+import { BaseEdge, type EdgeProps, getBezierPath } from '@xyflow/react';
+import { useMemo } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 // Grey color for reference connections (dimmed for softer appearance)
-const REFERENCE_COLOR = "#52525b";
+const REFERENCE_COLOR = '#52525b';
 
 export function ReferenceEdge({
   id,
@@ -24,7 +20,7 @@ export function ReferenceEdge({
   source,
   target,
 }: EdgeProps) {
-  const edgeStyle = useWorkflowStore((state) => state.edgeStyle);
+  const _edgeStyle = useWorkflowStore((state) => state.edgeStyle);
   const nodes = useWorkflowStore((state) => state.nodes);
 
   // Check if any node is selected and if this edge is connected to it
@@ -51,7 +47,7 @@ export function ReferenceEdge({
 
   // Generate a unique gradient ID based on selection state
   const gradientId = useMemo(() => {
-    const selectionKey = isConnectedToSelection ? "active" : "dimmed";
+    const selectionKey = isConnectedToSelection ? 'active' : 'dimmed';
     return `reference-gradient-${selectionKey}-${id}`;
   }, [isConnectedToSelection, id]);
 
@@ -60,9 +56,21 @@ export function ReferenceEdge({
       {/* SVG gradient definition for bright-dim-bright effect */}
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={REFERENCE_COLOR} stopOpacity={isConnectedToSelection ? 1 : 0.25} />
-          <stop offset="50%" stopColor={REFERENCE_COLOR} stopOpacity={isConnectedToSelection ? 0.55 : 0.1} />
-          <stop offset="100%" stopColor={REFERENCE_COLOR} stopOpacity={isConnectedToSelection ? 1 : 0.25} />
+          <stop
+            offset="0%"
+            stopColor={REFERENCE_COLOR}
+            stopOpacity={isConnectedToSelection ? 1 : 0.25}
+          />
+          <stop
+            offset="50%"
+            stopColor={REFERENCE_COLOR}
+            stopOpacity={isConnectedToSelection ? 0.55 : 0.1}
+          />
+          <stop
+            offset="100%"
+            stopColor={REFERENCE_COLOR}
+            stopOpacity={isConnectedToSelection ? 1 : 0.25}
+          />
         </linearGradient>
       </defs>
 
@@ -74,9 +82,9 @@ export function ReferenceEdge({
           ...style,
           stroke: `url(#${gradientId})`,
           strokeWidth: 2,
-          strokeDasharray: "6 4",
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
+          strokeDasharray: '6 4',
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
         }}
       />
 

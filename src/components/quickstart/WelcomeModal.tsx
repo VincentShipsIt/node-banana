@@ -1,22 +1,19 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useRef } from "react";
-import { WorkflowFile } from "@/store/workflowStore";
-import { QuickstartView } from "@/types/quickstart";
-import { QuickstartInitialView } from "./QuickstartInitialView";
-import { QuickstartTemplatesView } from "./QuickstartTemplatesView";
-import { PromptWorkflowView } from "./PromptWorkflowView";
+import { useCallback, useRef, useState } from 'react';
+import type { WorkflowFile } from '@/store/workflowStore';
+import type { QuickstartView } from '@/types/quickstart';
+import { PromptWorkflowView } from './PromptWorkflowView';
+import { QuickstartInitialView } from './QuickstartInitialView';
+import { QuickstartTemplatesView } from './QuickstartTemplatesView';
 
 interface WelcomeModalProps {
   onWorkflowGenerated: (workflow: WorkflowFile) => void;
   onClose: () => void;
 }
 
-export function WelcomeModal({
-  onWorkflowGenerated,
-  onClose,
-}: WelcomeModalProps) {
-  const [currentView, setCurrentView] = useState<QuickstartView>("initial");
+export function WelcomeModal({ onWorkflowGenerated, onClose }: WelcomeModalProps) {
+  const [currentView, setCurrentView] = useState<QuickstartView>('initial');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSelectBlankCanvas = useCallback(() => {
@@ -24,11 +21,11 @@ export function WelcomeModal({
   }, [onClose]);
 
   const handleSelectTemplates = useCallback(() => {
-    setCurrentView("templates");
+    setCurrentView('templates');
   }, []);
 
   const handleSelectVibe = useCallback(() => {
-    setCurrentView("vibe");
+    setCurrentView('vibe');
   }, []);
 
   const handleSelectLoad = useCallback(() => {
@@ -43,28 +40,26 @@ export function WelcomeModal({
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
-          const workflow = JSON.parse(
-            event.target?.result as string
-          ) as WorkflowFile;
+          const workflow = JSON.parse(event.target?.result as string) as WorkflowFile;
           if (workflow.version && workflow.nodes && workflow.edges) {
             onWorkflowGenerated(workflow);
           } else {
-            alert("Invalid workflow file format");
+            alert('Invalid workflow file format');
           }
         } catch {
-          alert("Failed to parse workflow file");
+          alert('Failed to parse workflow file');
         }
       };
       reader.readAsText(file);
 
       // Reset input so same file can be loaded again
-      e.target.value = "";
+      e.target.value = '';
     },
     [onWorkflowGenerated]
   );
 
   const handleBack = useCallback(() => {
-    setCurrentView("initial");
+    setCurrentView('initial');
   }, []);
 
   const handleWorkflowSelected = useCallback(
@@ -77,7 +72,7 @@ export function WelcomeModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-3xl mx-4 bg-neutral-800 rounded-xl border border-neutral-700 shadow-2xl overflow-hidden">
-        {currentView === "initial" && (
+        {currentView === 'initial' && (
           <QuickstartInitialView
             onSelectBlankCanvas={handleSelectBlankCanvas}
             onSelectTemplates={handleSelectTemplates}
@@ -85,17 +80,14 @@ export function WelcomeModal({
             onSelectLoad={handleSelectLoad}
           />
         )}
-        {currentView === "templates" && (
+        {currentView === 'templates' && (
           <QuickstartTemplatesView
             onBack={handleBack}
             onWorkflowSelected={handleWorkflowSelected}
           />
         )}
-        {currentView === "vibe" && (
-          <PromptWorkflowView
-            onBack={handleBack}
-            onWorkflowGenerated={handleWorkflowSelected}
-          />
+        {currentView === 'vibe' && (
+          <PromptWorkflowView onBack={handleBack} onWorkflowGenerated={handleWorkflowSelected} />
         )}
       </div>
 

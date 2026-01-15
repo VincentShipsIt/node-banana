@@ -1,17 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { ReactFlowProvider } from "@xyflow/react";
-import { Header } from "@/components/Header";
-import { WorkflowCanvas } from "@/components/WorkflowCanvas";
-import { FloatingActionBar } from "@/components/FloatingActionBar";
-import { AnnotationModal } from "@/components/AnnotationModal";
-import { useWorkflowStore } from "@/store/workflowStore";
+import { ReactFlowProvider } from '@xyflow/react';
+import { useEffect } from 'react';
+import { AnnotationModal } from '@/components/AnnotationModal';
+import { FloatingActionBar } from '@/components/FloatingActionBar';
+import { Header } from '@/components/Header';
+import { WorkflowCanvas } from '@/components/WorkflowCanvas';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 export default function Home() {
-  const initializeAutoSave = useWorkflowStore(
-    (state) => state.initializeAutoSave
-  );
+  const initializeAutoSave = useWorkflowStore((state) => state.initializeAutoSave);
   const cleanupAutoSave = useWorkflowStore((state) => state.cleanupAutoSave);
 
   useEffect(() => {

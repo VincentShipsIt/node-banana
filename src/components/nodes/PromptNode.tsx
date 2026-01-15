@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useCallback, useState } from "react";
-import { createPortal } from "react-dom";
-import { Handle, Position, NodeProps, Node } from "@xyflow/react";
-import { BaseNode } from "./BaseNode";
-import { useWorkflowStore } from "@/store/workflowStore";
-import { PromptNodeData } from "@/types";
-import { PromptEditorModal } from "@/components/modals/PromptEditorModal";
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { PromptEditorModal } from '@/components/modals/PromptEditorModal';
+import { useWorkflowStore } from '@/store/workflowStore';
+import type { PromptNodeData } from '@/types';
+import { BaseNode } from './BaseNode';
 
-type PromptNodeType = Node<PromptNodeData, "prompt">;
+type PromptNodeType = Node<PromptNodeData, 'prompt'>;
 
 export function PromptNode({ id, data, selected }: NodeProps<PromptNodeType>) {
   const nodeData = data;
@@ -60,24 +60,20 @@ export function PromptNode({ id, data, selected }: NodeProps<PromptNodeType>) {
           className="nodrag nopan nowheel w-full flex-1 min-h-[70px] p-2 text-xs leading-relaxed text-neutral-100 border border-neutral-700 rounded bg-neutral-900/50 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-600 focus:border-neutral-600 placeholder:text-neutral-500"
         />
 
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="text"
-          data-handletype="text"
-        />
+        <Handle type="source" position={Position.Right} id="text" data-handletype="text" />
       </BaseNode>
 
       {/* Modal - rendered via portal to escape React Flow stacking context */}
-      {isModalOpenLocal && createPortal(
-        <PromptEditorModal
-          isOpen={isModalOpenLocal}
-          initialPrompt={nodeData.prompt}
-          onSubmit={handleSubmitModal}
-          onClose={handleCloseModal}
-        />,
-        document.body
-      )}
+      {isModalOpenLocal &&
+        createPortal(
+          <PromptEditorModal
+            isOpen={isModalOpenLocal}
+            initialPrompt={nodeData.prompt}
+            onSubmit={handleSubmitModal}
+            onClose={handleCloseModal}
+          />,
+          document.body
+        )}
     </>
   );
 }

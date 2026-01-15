@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const FONT_SIZE_STORAGE_KEY = 'prompt-editor-font-size';
 const DEFAULT_FONT_SIZE = 14;
@@ -27,7 +28,7 @@ export const PromptEditorModal: React.FC<PromptEditorModalProps> = ({
       const saved = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
       if (saved) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= MIN_FONT_SIZE && parsed <= MAX_FONT_SIZE) {
+        if (!Number.isNaN(parsed) && parsed >= MIN_FONT_SIZE && parsed <= MAX_FONT_SIZE) {
           return parsed;
         }
       }
@@ -119,9 +120,7 @@ export const PromptEditorModal: React.FC<PromptEditorModalProps> = ({
       <div className="relative bg-neutral-800 border border-neutral-700 rounded-lg shadow-2xl w-full max-w-3xl h-[85vh] flex flex-col mx-4">
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
-          <h2 className="text-xl font-semibold text-neutral-100">
-            Edit Prompt
-          </h2>
+          <h2 className="text-xl font-semibold text-neutral-100">Edit Prompt</h2>
         </div>
 
         {/* Box containing toolbar and textarea */}
@@ -149,7 +148,6 @@ export const PromptEditorModal: React.FC<PromptEditorModalProps> = ({
             placeholder="Describe what to generate..."
             className="nodrag nopan nowheel flex-1 w-full p-6 leading-relaxed text-neutral-100 bg-transparent border-0 resize-none focus:outline-none placeholder:text-neutral-500"
             style={{ fontSize: `${fontSize}px` }}
-            autoFocus
           />
         </div>
 
@@ -182,12 +180,7 @@ export const PromptEditorModal: React.FC<PromptEditorModalProps> = ({
                 className="absolute top-3 right-3 text-neutral-400 hover:text-neutral-200 transition-colors focus:outline-none"
                 aria-label="Close"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -197,9 +190,7 @@ export const PromptEditorModal: React.FC<PromptEditorModalProps> = ({
                 </svg>
               </button>
 
-              <p className="text-neutral-100 text-center mb-6">
-                You have unsaved changes
-              </p>
+              <p className="text-neutral-100 text-center mb-6">You have unsaved changes</p>
               <div className="flex justify-center gap-3">
                 <button
                   onClick={onClose}

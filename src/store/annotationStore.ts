@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { AnnotationShape, ToolType, ToolOptions } from "@/types";
+import { create } from 'zustand';
+import type { AnnotationShape, ToolOptions, ToolType } from '@/types';
 
 interface AnnotationStore {
   // Modal state
@@ -41,7 +41,7 @@ interface AnnotationStore {
 }
 
 const defaultToolOptions: ToolOptions = {
-  strokeColor: "#ef4444", // red-500
+  strokeColor: '#ef4444', // red-500
   strokeWidth: 3,
   fillColor: null,
   fontSize: 24,
@@ -56,7 +56,7 @@ export const useAnnotationStore = create<AnnotationStore>((set, get) => ({
   selectedShapeId: null,
   history: [[]],
   historyIndex: 0,
-  currentTool: "rectangle",
+  currentTool: 'rectangle',
   toolOptions: defaultToolOptions,
 
   openModal: (nodeId: string, image: string, existingAnnotations: AnnotationShape[] = []) => {
@@ -94,7 +94,7 @@ export const useAnnotationStore = create<AnnotationStore>((set, get) => ({
   updateAnnotation: (id: string, updates: Partial<AnnotationShape>) => {
     set((state) => ({
       annotations: state.annotations.map((shape) =>
-        shape.id === id ? { ...shape, ...updates } as AnnotationShape : shape
+        shape.id === id ? ({ ...shape, ...updates } as AnnotationShape) : shape
       ),
     }));
   },

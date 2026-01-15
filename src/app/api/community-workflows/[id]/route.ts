@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { NextResponse } from 'next/server';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -9,11 +9,11 @@ interface RouteParams {
 /**
  * GET: Load a specific community workflow by ID
  */
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const filename = `${id}.json`;
-    const filePath = path.join(process.cwd(), "examples", filename);
+    const filePath = path.join(process.cwd(), 'examples', filename);
 
     // Check if file exists
     try {
@@ -29,7 +29,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     // Read and parse workflow file
-    const content = await fs.readFile(filePath, "utf-8");
+    const content = await fs.readFile(filePath, 'utf-8');
     const workflow = JSON.parse(content);
 
     return NextResponse.json({
@@ -37,11 +37,11 @@ export async function GET(request: Request, { params }: RouteParams) {
       workflow,
     });
   } catch (error) {
-    console.error("Error loading community workflow:", error);
+    console.error('Error loading community workflow:', error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to load workflow",
+        error: 'Failed to load workflow',
       },
       { status: 500 }
     );

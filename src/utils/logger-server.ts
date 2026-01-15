@@ -3,8 +3,8 @@
  * This file should never be imported on the client side
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import type { LogSession } from './logger';
 
 /**
@@ -56,7 +56,7 @@ export async function rotateLogFiles(): Promise<void> {
 
   // Filter to only session log files
   const sessionFiles = files
-    .filter(f => f.startsWith('session-') && f.endsWith('.json'))
+    .filter((f) => f.startsWith('session-') && f.endsWith('.json'))
     .sort()
     .reverse(); // Most recent first
 

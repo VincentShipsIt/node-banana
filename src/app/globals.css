@@ -7,6 +7,9 @@
 :root {
   --background: #0a0a0a;
   --foreground: #fafafa;
+  /* Handle colors (used by labels) */
+  --handle-color-image: #10b981;
+  --handle-color-text: #3b82f6;
 }
 
 html {
@@ -70,8 +73,8 @@ body {
   background: #10b981;
 }
 
-/* Prompt/text handles - soft blue */
-.react-flow__handle[data-handletype="prompt"] {
+/* Text handles - soft blue */
+.react-flow__handle[data-handletype="text"] {
   background: #3b82f6;
 }
 
@@ -89,64 +92,64 @@ body {
 
 /* Hide resize handles but show resize cursor on edges */
 .react-flow__resize-control {
-  opacity: 0 !important;
-  pointer-events: auto !important;
+  opacity: 0;
+  pointer-events: auto;
 }
 
 .react-flow__resize-control.left,
 .react-flow__resize-control.right {
-  cursor: ew-resize !important;
-  width: 8px !important;
+  cursor: ew-resize;
+  width: 8px;
 }
 
 .react-flow__resize-control.top,
 .react-flow__resize-control.bottom {
-  cursor: ns-resize !important;
-  height: 8px !important;
+  cursor: ns-resize;
+  height: 8px;
 }
 
 .react-flow__resize-control.top.left,
 .react-flow__resize-control.bottom.right {
-  cursor: nwse-resize !important;
+  cursor: nwse-resize;
 }
 
 .react-flow__resize-control.top.right,
 .react-flow__resize-control.bottom.left {
-  cursor: nesw-resize !important;
+  cursor: nesw-resize;
 }
 
 /* React Flow Controls dark theme */
 .react-flow__controls {
-  background: #262626 !important;
-  border: 1px solid #404040 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+  background: #262626;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
 .react-flow__controls-button {
-  background: #262626 !important;
-  border-bottom: 1px solid #404040 !important;
+  background: #262626;
+  border-bottom: 1px solid #404040;
 }
 
 .react-flow__controls-button svg {
-  fill: #d4d4d4 !important;
+  fill: #d4d4d4;
 }
 
 .react-flow__controls-button svg path {
-  fill: #d4d4d4 !important;
+  fill: #d4d4d4;
 }
 
 .react-flow__controls-button:hover {
-  background: #404040 !important;
+  background: #404040;
 }
 
 .react-flow__controls-button:hover svg,
 .react-flow__controls-button:hover svg path {
-  fill: #fafafa !important;
+  fill: #fafafa;
 }
 
 .react-flow__controls-button:last-child {
-  border-bottom: none !important;
+  border-bottom: none;
 }
 
 /* Custom scrollbar */
@@ -172,7 +175,7 @@ body {
 /* Make the multi-selection box pass through pointer events so we can still
    interact with handles, resize controls, and other node elements */
 .react-flow__nodesselection-rect {
-  pointer-events: none !important;
+  pointer-events: none;
 }
 
 /* Edge pulse animation for loading connectors */

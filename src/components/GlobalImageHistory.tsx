@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { useWorkflowStore } from "@/store/workflowStore";
-import { ImageHistoryItem } from "@/types";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useWorkflowStore } from '@/store/workflowStore';
+import type { ImageHistoryItem } from '@/types';
 
 // Helper function for relative time display
 function formatRelativeTime(timestamp: number): string {
@@ -14,11 +14,11 @@ function formatRelativeTime(timestamp: number): string {
 
   if (hours > 0) return `${hours}h ago`;
   if (minutes > 0) return `${minutes}m ago`;
-  return "Just now";
+  return 'Just now';
 }
 
 // Calculate fan position for each item (vertical stack with slight curve to the right, like macOS Downloads)
-function calculateFanPosition(index: number, total: number) {
+function calculateFanPosition(index: number, _total: number) {
   // Vertical spacing between items
   const verticalSpacing = 60;
 
@@ -54,13 +54,13 @@ function FanItem({
       className="absolute w-14 h-14 rounded-lg overflow-hidden border-2 border-neutral-600 hover:border-blue-500 shadow-lg cursor-grab active:cursor-grabbing transition-colors duration-150 animate-fan-enter group"
       style={
         {
-          "--fan-x": `${x}px`,
-          "--fan-y": `${y}px`,
+          '--fan-x': `${x}px`,
+          '--fan-y': `${y}px`,
           animationDelay: `${delay}ms`,
           zIndex: 10 - index,
         } as React.CSSProperties
       }
-      title={`${formatRelativeTime(item.timestamp)}\n${item.prompt?.substring(0, 50) || ""}...`}
+      title={`${formatRelativeTime(item.timestamp)}\n${item.prompt?.substring(0, 50) || ''}...`}
     >
       <img
         src={item.image}
@@ -91,29 +91,26 @@ function HistorySidebar({
   // Close on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node)
-      ) {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
         onClose();
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
   // Close on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose();
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
   // Position the sidebar near the trigger, but ensure it stays on screen
   const sidebarStyle: React.CSSProperties = {
-    position: "fixed",
+    position: 'fixed',
     zIndex: 200,
   };
 
@@ -125,8 +122,8 @@ function HistorySidebar({
     sidebarStyle.bottom = `${bottom}px`;
   } else {
     // Fallback to bottom right
-    sidebarStyle.right = "100px";
-    sidebarStyle.bottom = "100px";
+    sidebarStyle.right = '100px';
+    sidebarStyle.bottom = '100px';
   }
 
   return createPortal(
@@ -137,9 +134,7 @@ function HistorySidebar({
     >
       {/* Header */}
       <div className="px-4 py-3 border-b border-neutral-700 flex items-center justify-between shrink-0">
-        <span className="text-sm text-neutral-200 font-medium">
-          All History ({history.length})
-        </span>
+        <span className="text-sm text-neutral-200 font-medium">All History ({history.length})</span>
         <div className="flex items-center gap-2">
           <button
             onClick={onClear}
@@ -153,7 +148,13 @@ function HistorySidebar({
             className="w-5 h-5 rounded hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
             title="Close"
           >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -182,10 +183,11 @@ function HistorySidebar({
             {/* Info */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <p className="text-[11px] text-neutral-300 truncate">
-                {item.prompt?.substring(0, 60) || "No prompt"}
+                {item.prompt?.substring(0, 60) || 'No prompt'}
               </p>
               <p className="text-[10px] text-neutral-500 mt-0.5">
-                {formatRelativeTime(item.timestamp)} · {item.model === "nano-banana-pro" ? "Pro" : "Standard"}
+                {formatRelativeTime(item.timestamp)} ·{' '}
+                {item.model === 'nano-banana-pro' ? 'Pro' : 'Standard'}
               </p>
             </div>
           </div>
@@ -217,24 +219,21 @@ export function GlobalImageHistory() {
   // Close fan on click outside (but not sidebar)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        drawerRef.current &&
-        !drawerRef.current.contains(event.target as Node)
-      ) {
+      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
     if (isOpen && !showSidebar) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, showSidebar]);
 
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         if (showSidebar) {
           setShowSidebar(false);
         } else {
@@ -243,33 +242,30 @@ export function GlobalImageHistory() {
       }
     };
     if (isOpen || showSidebar) {
-      document.addEventListener("keydown", handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown);
     }
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, showSidebar]);
 
-  const handleDragStart = useCallback(
-    (e: React.DragEvent, item: ImageHistoryItem) => {
-      e.dataTransfer.setData(
-        "application/history-image",
-        JSON.stringify({
-          image: item.image,
-          prompt: item.prompt,
-          timestamp: item.timestamp,
-        })
-      );
-      e.dataTransfer.effectAllowed = "copy";
+  const handleDragStart = useCallback((e: React.DragEvent, item: ImageHistoryItem) => {
+    e.dataTransfer.setData(
+      'application/history-image',
+      JSON.stringify({
+        image: item.image,
+        prompt: item.prompt,
+        timestamp: item.timestamp,
+      })
+    );
+    e.dataTransfer.effectAllowed = 'copy';
 
-      // Close the fan/sidebar after drag has started
-      // Using setTimeout to defer state change until after the drag is properly initiated
-      // This prevents the draggable element from being unmounted mid-drag
-      setTimeout(() => {
-        setIsOpen(false);
-        setShowSidebar(false);
-      }, 0);
-    },
-    []
-  );
+    // Close the fan/sidebar after drag has started
+    // Using setTimeout to defer state change until after the drag is properly initiated
+    // This prevents the draggable element from being unmounted mid-drag
+    setTimeout(() => {
+      setIsOpen(false);
+      setShowSidebar(false);
+    }, 0);
+  }, []);
 
   const handleShowAll = useCallback(() => {
     setIsOpen(false);
@@ -300,7 +296,7 @@ export function GlobalImageHistory() {
           text-neutral-400 hover:text-white
           shadow-lg transition-colors
         `}
-        title={`${history.length} image${history.length > 1 ? "s" : ""} in history`}
+        title={`${history.length} image${history.length > 1 ? 's' : ''} in history`}
       >
         {/* Clock/history icon */}
         <svg
@@ -318,13 +314,16 @@ export function GlobalImageHistory() {
         </svg>
         {/* Badge showing count */}
         <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-blue-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold">
-          {history.length > 99 ? "99+" : history.length}
+          {history.length > 99 ? '99+' : history.length}
         </span>
       </button>
 
       {/* Fan Layout */}
       {isOpen && (
-        <div className="absolute bottom-full right-1/2 translate-x-1/2 mb-2" style={{ zIndex: 100 }}>
+        <div
+          className="absolute bottom-full right-1/2 translate-x-1/2 mb-2"
+          style={{ zIndex: 100 }}
+        >
           {/* Fan items */}
           <div className="relative w-0 h-0">
             {fanItems.map((item, index) => (
@@ -339,25 +338,25 @@ export function GlobalImageHistory() {
           </div>
 
           {/* Show All button (if more than 10 items) - positioned relative to top fan item */}
-          {hasOverflow && (() => {
-            const topItemPos = calculateFanPosition(fanItems.length - 1, fanItems.length);
-            return (
-              <button
-                onClick={handleShowAll}
-                className="absolute animate-fan-enter bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 rounded-lg px-2 py-1 text-[10px] text-neutral-300 hover:text-white shadow-lg transition-colors whitespace-nowrap"
-                style={
-                  {
-                    "--fan-x": `${topItemPos.x}px`,
-                    "--fan-y": `${topItemPos.y - 60}px`,
-                    animationDelay: `${fanItems.length * 30}ms`,
-                  } as React.CSSProperties
-                }
-              >
-                +{history.length - 10} more
-              </button>
-            );
-          })()}
-
+          {hasOverflow &&
+            (() => {
+              const topItemPos = calculateFanPosition(fanItems.length - 1, fanItems.length);
+              return (
+                <button
+                  onClick={handleShowAll}
+                  className="absolute animate-fan-enter bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 rounded-lg px-2 py-1 text-[10px] text-neutral-300 hover:text-white shadow-lg transition-colors whitespace-nowrap"
+                  style={
+                    {
+                      '--fan-x': `${topItemPos.x}px`,
+                      '--fan-y': `${topItemPos.y - 60}px`,
+                      animationDelay: `${fanItems.length * 30}ms`,
+                    } as React.CSSProperties
+                  }
+                >
+                  +{history.length - 10} more
+                </button>
+              );
+            })()}
         </div>
       )}
 

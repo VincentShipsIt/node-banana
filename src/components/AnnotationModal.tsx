@@ -1,29 +1,39 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Stage, Layer, Image as KonvaImage, Rect, Ellipse, Arrow, Line, Text, Transformer } from "react-konva";
-import { useAnnotationStore } from "@/store/annotationStore";
-import { useWorkflowStore } from "@/store/workflowStore";
+import Konva from 'konva';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Arrow,
+  Ellipse,
+  Image as KonvaImage,
+  Layer,
+  Line,
+  Rect,
+  Stage,
+  Text,
+  Transformer,
+} from 'react-konva';
+import { useAnnotationStore } from '@/store/annotationStore';
+import { useWorkflowStore } from '@/store/workflowStore';
+import type {
   AnnotationShape,
-  RectangleShape,
-  CircleShape,
   ArrowShape,
+  CircleShape,
   FreehandShape,
+  RectangleShape,
   TextShape,
   ToolType,
-} from "@/types";
-import Konva from "konva";
+} from '@/types';
 
 const COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#3b82f6",
-  "#8b5cf6",
-  "#000000",
-  "#ffffff",
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#22c55e',
+  '#3b82f6',
+  '#8b5cf6',
+  '#000000',
+  '#ffffff',
 ];
 
 const STROKE_WIDTHS = [2, 4, 8];
@@ -63,7 +73,9 @@ export function AnnotationModal() {
   const [currentShape, setCurrentShape] = useState<AnnotationShape | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [textInputPosition, setTextInputPosition] = useState<{ x: number; y: number } | null>(null);
-  const [pendingTextPosition, setPendingTextPosition] = useState<{ x: number; y: number } | null>(null);
+  const [pendingTextPosition, setPendingTextPosition] = useState<{ x: number; y: number } | null>(
+    null
+  );
   const textInputCreatedAt = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -93,7 +105,7 @@ export function AnnotationModal() {
   useEffect(() => {
     if (transformerRef.current && stageRef.current) {
       const selectedNode = stageRef.current.findOne(`#${selectedShapeId}`);
-      if (selectedNode && currentTool === "select") {
+      if (selectedNode && currentTool === 'select') {
         transformerRef.current.nodes([selectedNode]);
       } else {
         transformerRef.current.nodes([]);
@@ -105,12 +117,12 @@ export function AnnotationModal() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isModalOpen) return;
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedShapeId && !editingTextId) {
           deleteAnnotation(selectedShapeId);
         }
       }
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         if (editingTextId) {
           setEditingTextId(null);
           setTextInputPosition(null);
@@ -120,7 +132,7 @@ export function AnnotationModal() {
         }
       }
       if (e.ctrlKey || e.metaKey) {
-        if (e.key === "z") {
+        if (e.key === 'z') {
           e.preventDefault();
           if (e.shiftKey) {
             redo();
@@ -130,8 +142,8 @@ export function AnnotationModal() {
         }
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen, selectedShapeId, editingTextId, deleteAnnotation, closeModal, undo, redo]);
 
   const getRelativePointerPosition = useCallback(() => {
@@ -145,8 +157,9 @@ export function AnnotationModal() {
 
   const handleMouseDown = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
-      if (currentTool === "select") {
-        const clickedOnEmpty = e.target === e.target.getStage() || e.target.getClassName() === "Image";
+      if (currentTool === 'select') {
+        const clickedOnEmpty =
+          e.target === e.target.getStage() || e.target.getClassName() === 'Image';
         if (clickedOnEmpty) {
           selectShape(null);
         }
@@ -170,19 +183,31 @@ export function AnnotationModal() {
       let newShape: AnnotationShape | null = null;
 
       switch (currentTool) {
-        case "rectangle":
-          newShape = { ...baseShape, type: "rectangle", width: 0, height: 0, fill: toolOptions.fillColor } as RectangleShape;
+        case 'rectangle':
+          newShape = {
+            ...baseShape,
+            type: 'rectangle',
+            width: 0,
+            height: 0,
+            fill: toolOptions.fillColor,
+          } as RectangleShape;
           break;
-        case "circle":
-          newShape = { ...baseShape, type: "circle", radiusX: 0, radiusY: 0, fill: toolOptions.fillColor } as CircleShape;
+        case 'circle':
+          newShape = {
+            ...baseShape,
+            type: 'circle',
+            radiusX: 0,
+            radiusY: 0,
+            fill: toolOptions.fillColor,
+          } as CircleShape;
           break;
-        case "arrow":
-          newShape = { ...baseShape, type: "arrow", points: [0, 0, 0, 0] } as ArrowShape;
+        case 'arrow':
+          newShape = { ...baseShape, type: 'arrow', points: [0, 0, 0, 0] } as ArrowShape;
           break;
-        case "freehand":
-          newShape = { ...baseShape, type: "freehand", points: [0, 0] } as FreehandShape;
+        case 'freehand':
+          newShape = { ...baseShape, type: 'freehand', points: [0, 0] } as FreehandShape;
           break;
-        case "text": {
+        case 'text': {
           // Calculate screen position for the input
           const stage = stageRef.current;
           if (stage) {
@@ -196,7 +221,7 @@ export function AnnotationModal() {
             }
           }
           textInputCreatedAt.current = Date.now();
-          setEditingTextId("new");
+          setEditingTextId('new');
           setIsDrawing(false);
           setTimeout(() => textInputRef.current?.focus(), 0);
           return;
@@ -205,7 +230,7 @@ export function AnnotationModal() {
 
       if (newShape) setCurrentShape(newShape);
     },
-    [currentTool, toolOptions, getRelativePointerPosition, selectShape, addAnnotation, scale, position]
+    [currentTool, toolOptions, getRelativePointerPosition, selectShape, scale, position]
   );
 
   const handleMouseMove = useCallback(() => {
@@ -213,24 +238,42 @@ export function AnnotationModal() {
     const pos = getRelativePointerPosition();
 
     switch (currentShape.type) {
-      case "rectangle": {
+      case 'rectangle': {
         const width = pos.x - drawStart.x;
         const height = pos.y - drawStart.y;
-        setCurrentShape({ ...currentShape, x: width < 0 ? pos.x : drawStart.x, y: height < 0 ? pos.y : drawStart.y, width: Math.abs(width), height: Math.abs(height) } as RectangleShape);
+        setCurrentShape({
+          ...currentShape,
+          x: width < 0 ? pos.x : drawStart.x,
+          y: height < 0 ? pos.y : drawStart.y,
+          width: Math.abs(width),
+          height: Math.abs(height),
+        } as RectangleShape);
         break;
       }
-      case "circle": {
+      case 'circle': {
         const radiusX = Math.abs(pos.x - drawStart.x) / 2;
         const radiusY = Math.abs(pos.y - drawStart.y) / 2;
-        setCurrentShape({ ...currentShape, x: (drawStart.x + pos.x) / 2, y: (drawStart.y + pos.y) / 2, radiusX, radiusY } as CircleShape);
+        setCurrentShape({
+          ...currentShape,
+          x: (drawStart.x + pos.x) / 2,
+          y: (drawStart.y + pos.y) / 2,
+          radiusX,
+          radiusY,
+        } as CircleShape);
         break;
       }
-      case "arrow":
-        setCurrentShape({ ...currentShape, points: [0, 0, pos.x - drawStart.x, pos.y - drawStart.y] } as ArrowShape);
+      case 'arrow':
+        setCurrentShape({
+          ...currentShape,
+          points: [0, 0, pos.x - drawStart.x, pos.y - drawStart.y],
+        } as ArrowShape);
         break;
-      case "freehand": {
+      case 'freehand': {
         const freehand = currentShape as FreehandShape;
-        setCurrentShape({ ...freehand, points: [...freehand.points, pos.x - drawStart.x, pos.y - drawStart.y] } as FreehandShape);
+        setCurrentShape({
+          ...freehand,
+          points: [...freehand.points, pos.x - drawStart.x, pos.y - drawStart.y],
+        } as FreehandShape);
         break;
       }
     }
@@ -241,13 +284,13 @@ export function AnnotationModal() {
     setIsDrawing(false);
 
     let shouldAdd = true;
-    if (currentShape.type === "rectangle") {
+    if (currentShape.type === 'rectangle') {
       const rect = currentShape as RectangleShape;
       shouldAdd = rect.width > 5 && rect.height > 5;
-    } else if (currentShape.type === "circle") {
+    } else if (currentShape.type === 'circle') {
       const circle = currentShape as CircleShape;
       shouldAdd = circle.radiusX > 5 && circle.radiusY > 5;
-    } else if (currentShape.type === "arrow") {
+    } else if (currentShape.type === 'arrow') {
       const arrow = currentShape as ArrowShape;
       const dx = arrow.points[2];
       const dy = arrow.points[3];
@@ -258,20 +301,23 @@ export function AnnotationModal() {
     setCurrentShape(null);
   }, [isDrawing, currentShape, addAnnotation]);
 
-  const handleWheel = useCallback((e: Konva.KonvaEventObject<WheelEvent>) => {
-    e.evt.preventDefault();
-    const scaleBy = 1.1;
-    const oldScale = scale;
-    const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-    setScale(Math.min(Math.max(newScale, 0.1), 5));
-  }, [scale]);
+  const handleWheel = useCallback(
+    (e: Konva.KonvaEventObject<WheelEvent>) => {
+      e.evt.preventDefault();
+      const scaleBy = 1.1;
+      const oldScale = scale;
+      const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+      setScale(Math.min(Math.max(newScale, 0.1), 5));
+    },
+    [scale]
+  );
 
   const flattenImage = useCallback((): string => {
     const stage = stageRef.current;
-    if (!stage || !image) return "";
+    if (!stage || !image) return '';
 
     const tempStage = new Konva.Stage({
-      container: document.createElement("div"),
+      container: document.createElement('div'),
       width: image.width,
       height: image.height,
     });
@@ -285,29 +331,71 @@ export function AnnotationModal() {
     annotations.forEach((shape) => {
       let konvaShape: Konva.Shape | null = null;
       switch (shape.type) {
-        case "rectangle": {
+        case 'rectangle': {
           const rect = shape as RectangleShape;
-          konvaShape = new Konva.Rect({ x: rect.x, y: rect.y, width: rect.width, height: rect.height, stroke: rect.stroke, strokeWidth: rect.strokeWidth, fill: rect.fill || undefined, opacity: rect.opacity });
+          konvaShape = new Konva.Rect({
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+            stroke: rect.stroke,
+            strokeWidth: rect.strokeWidth,
+            fill: rect.fill || undefined,
+            opacity: rect.opacity,
+          });
           break;
         }
-        case "circle": {
+        case 'circle': {
           const circle = shape as CircleShape;
-          konvaShape = new Konva.Ellipse({ x: circle.x, y: circle.y, radiusX: circle.radiusX, radiusY: circle.radiusY, stroke: circle.stroke, strokeWidth: circle.strokeWidth, fill: circle.fill || undefined, opacity: circle.opacity });
+          konvaShape = new Konva.Ellipse({
+            x: circle.x,
+            y: circle.y,
+            radiusX: circle.radiusX,
+            radiusY: circle.radiusY,
+            stroke: circle.stroke,
+            strokeWidth: circle.strokeWidth,
+            fill: circle.fill || undefined,
+            opacity: circle.opacity,
+          });
           break;
         }
-        case "arrow": {
+        case 'arrow': {
           const arrow = shape as ArrowShape;
-          konvaShape = new Konva.Arrow({ x: arrow.x, y: arrow.y, points: arrow.points, stroke: arrow.stroke, strokeWidth: arrow.strokeWidth, fill: arrow.stroke, opacity: arrow.opacity });
+          konvaShape = new Konva.Arrow({
+            x: arrow.x,
+            y: arrow.y,
+            points: arrow.points,
+            stroke: arrow.stroke,
+            strokeWidth: arrow.strokeWidth,
+            fill: arrow.stroke,
+            opacity: arrow.opacity,
+          });
           break;
         }
-        case "freehand": {
+        case 'freehand': {
           const freehand = shape as FreehandShape;
-          konvaShape = new Konva.Line({ x: freehand.x, y: freehand.y, points: freehand.points, stroke: freehand.stroke, strokeWidth: freehand.strokeWidth, opacity: freehand.opacity, lineCap: "round", lineJoin: "round" });
+          konvaShape = new Konva.Line({
+            x: freehand.x,
+            y: freehand.y,
+            points: freehand.points,
+            stroke: freehand.stroke,
+            strokeWidth: freehand.strokeWidth,
+            opacity: freehand.opacity,
+            lineCap: 'round',
+            lineJoin: 'round',
+          });
           break;
         }
-        case "text": {
+        case 'text': {
           const text = shape as TextShape;
-          konvaShape = new Konva.Text({ x: text.x, y: text.y, text: text.text, fontSize: text.fontSize, fill: text.fill, opacity: text.opacity });
+          konvaShape = new Konva.Text({
+            x: text.x,
+            y: text.y,
+            text: text.text,
+            fontSize: text.fontSize,
+            fill: text.fill,
+            opacity: text.opacity,
+          });
           break;
         }
       }
@@ -331,29 +419,80 @@ export function AnnotationModal() {
     const commonProps = {
       id: shape.id,
       opacity: shape.opacity,
-      onClick: () => { if (currentTool === "select") selectShape(shape.id); },
-      draggable: currentTool === "select" && !isPreview,
-      onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => { updateAnnotation(shape.id, { x: e.target.x(), y: e.target.y() }); },
+      onClick: () => {
+        if (currentTool === 'select') selectShape(shape.id);
+      },
+      draggable: currentTool === 'select' && !isPreview,
+      onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+        updateAnnotation(shape.id, { x: e.target.x(), y: e.target.y() });
+      },
     };
 
     switch (shape.type) {
-      case "rectangle": {
+      case 'rectangle': {
         const rect = shape as RectangleShape;
-        return <Rect key={shape.id} {...commonProps} x={rect.x} y={rect.y} width={rect.width} height={rect.height} stroke={rect.stroke} strokeWidth={rect.strokeWidth} fill={rect.fill || undefined} />;
+        return (
+          <Rect
+            key={shape.id}
+            {...commonProps}
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            stroke={rect.stroke}
+            strokeWidth={rect.strokeWidth}
+            fill={rect.fill || undefined}
+          />
+        );
       }
-      case "circle": {
+      case 'circle': {
         const circle = shape as CircleShape;
-        return <Ellipse key={shape.id} {...commonProps} x={circle.x} y={circle.y} radiusX={circle.radiusX} radiusY={circle.radiusY} stroke={circle.stroke} strokeWidth={circle.strokeWidth} fill={circle.fill || undefined} />;
+        return (
+          <Ellipse
+            key={shape.id}
+            {...commonProps}
+            x={circle.x}
+            y={circle.y}
+            radiusX={circle.radiusX}
+            radiusY={circle.radiusY}
+            stroke={circle.stroke}
+            strokeWidth={circle.strokeWidth}
+            fill={circle.fill || undefined}
+          />
+        );
       }
-      case "arrow": {
+      case 'arrow': {
         const arrow = shape as ArrowShape;
-        return <Arrow key={shape.id} {...commonProps} x={arrow.x} y={arrow.y} points={arrow.points} stroke={arrow.stroke} strokeWidth={arrow.strokeWidth} fill={arrow.stroke} />;
+        return (
+          <Arrow
+            key={shape.id}
+            {...commonProps}
+            x={arrow.x}
+            y={arrow.y}
+            points={arrow.points}
+            stroke={arrow.stroke}
+            strokeWidth={arrow.strokeWidth}
+            fill={arrow.stroke}
+          />
+        );
       }
-      case "freehand": {
+      case 'freehand': {
         const freehand = shape as FreehandShape;
-        return <Line key={shape.id} {...commonProps} x={freehand.x} y={freehand.y} points={freehand.points} stroke={freehand.stroke} strokeWidth={freehand.strokeWidth} lineCap="round" lineJoin="round" />;
+        return (
+          <Line
+            key={shape.id}
+            {...commonProps}
+            x={freehand.x}
+            y={freehand.y}
+            points={freehand.points}
+            stroke={freehand.stroke}
+            strokeWidth={freehand.strokeWidth}
+            lineCap="round"
+            lineJoin="round"
+          />
+        );
       }
-      case "text": {
+      case 'text': {
         const text = shape as TextShape;
         return (
           <Text
@@ -361,7 +500,7 @@ export function AnnotationModal() {
             {...commonProps}
             x={text.x}
             y={text.y}
-            text={text.text || " "}
+            text={text.text || ' '}
             fontSize={text.fontSize}
             fill={text.fill}
             onTransformEnd={(e) => {
@@ -379,7 +518,7 @@ export function AnnotationModal() {
               });
             }}
             onDblClick={() => {
-              if (currentTool === "select") {
+              if (currentTool === 'select') {
                 const stage = stageRef.current;
                 if (stage) {
                   const stageBox = stage.container().getBoundingClientRect();
@@ -400,12 +539,12 @@ export function AnnotationModal() {
   if (!isModalOpen) return null;
 
   const tools: { type: ToolType; label: string }[] = [
-    { type: "select", label: "Select" },
-    { type: "rectangle", label: "Rect" },
-    { type: "circle", label: "Circle" },
-    { type: "arrow", label: "Arrow" },
-    { type: "freehand", label: "Draw" },
-    { type: "text", label: "Text" },
+    { type: 'select', label: 'Select' },
+    { type: 'rectangle', label: 'Rect' },
+    { type: 'circle', label: 'Circle' },
+    { type: 'arrow', label: 'Arrow' },
+    { type: 'freehand', label: 'Draw' },
+    { type: 'text', label: 'Text' },
   ];
 
   return (
@@ -419,8 +558,8 @@ export function AnnotationModal() {
               onClick={() => setCurrentTool(tool.type)}
               className={`px-3.5 py-1.5 text-xs font-medium rounded transition-colors ${
                 currentTool === tool.type
-                  ? "bg-white text-neutral-900"
-                  : "text-neutral-400 hover:text-white"
+                  ? 'bg-white text-neutral-900'
+                  : 'text-neutral-400 hover:text-white'
               }`}
             >
               {tool.label}
@@ -429,19 +568,34 @@ export function AnnotationModal() {
 
           <div className="w-px h-6 bg-neutral-700 mx-3" />
 
-          <button onClick={undo} className="px-3 py-1.5 text-xs text-neutral-400 hover:text-white">Undo</button>
-          <button onClick={redo} className="px-3 py-1.5 text-xs text-neutral-400 hover:text-white">Redo</button>
+          <button onClick={undo} className="px-3 py-1.5 text-xs text-neutral-400 hover:text-white">
+            Undo
+          </button>
+          <button onClick={redo} className="px-3 py-1.5 text-xs text-neutral-400 hover:text-white">
+            Redo
+          </button>
 
           <div className="w-px h-6 bg-neutral-700 mx-3" />
 
-          <button onClick={clearAnnotations} className="px-3 py-1.5 text-xs text-neutral-400 hover:text-red-400">Clear</button>
+          <button
+            onClick={clearAnnotations}
+            className="px-3 py-1.5 text-xs text-neutral-400 hover:text-red-400"
+          >
+            Clear
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={closeModal} className="px-4 py-1.5 text-xs font-medium text-neutral-400 hover:text-white">
+          <button
+            onClick={closeModal}
+            className="px-4 py-1.5 text-xs font-medium text-neutral-400 hover:text-white"
+          >
             Cancel
           </button>
-          <button onClick={handleDone} className="px-4 py-1.5 text-xs font-medium bg-white text-neutral-900 rounded hover:bg-neutral-200">
+          <button
+            onClick={handleDone}
+            className="px-4 py-1.5 text-xs font-medium bg-white text-neutral-900 rounded hover:bg-neutral-200"
+          >
             Done
           </button>
         </div>
@@ -457,8 +611,10 @@ export function AnnotationModal() {
           scaleY={scale}
           x={position.x}
           y={position.y}
-          draggable={currentTool === "select"}
-          onDragEnd={(e) => { if (e.target === stageRef.current) setPosition({ x: e.target.x(), y: e.target.y() }); }}
+          draggable={currentTool === 'select'}
+          onDragEnd={(e) => {
+            if (e.target === stageRef.current) setPosition({ x: e.target.x(), y: e.target.y() });
+          }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -466,7 +622,9 @@ export function AnnotationModal() {
           onWheel={handleWheel}
         >
           <Layer>
-            {image && <KonvaImage image={image} width={stageSize.width} height={stageSize.height} />}
+            {image && (
+              <KonvaImage image={image} width={stageSize.width} height={stageSize.height} />
+            )}
             {annotations.map((shape) => renderShape(shape))}
             {currentShape && renderShape(currentShape, true)}
             <Transformer ref={transformerRef} />
@@ -484,7 +642,9 @@ export function AnnotationModal() {
               key={color}
               onClick={() => setToolOptions({ strokeColor: color })}
               className={`w-6 h-6 rounded-full transition-transform ${
-                toolOptions.strokeColor === color ? "ring-2 ring-white ring-offset-2 ring-offset-neutral-900 scale-110" : "hover:scale-105"
+                toolOptions.strokeColor === color
+                  ? 'ring-2 ring-white ring-offset-2 ring-offset-neutral-900 scale-110'
+                  : 'hover:scale-105'
               }`}
               style={{ backgroundColor: color }}
             />
@@ -501,10 +661,13 @@ export function AnnotationModal() {
               key={width}
               onClick={() => setToolOptions({ strokeWidth: width })}
               className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${
-                toolOptions.strokeWidth === width ? "bg-neutral-700" : "hover:bg-neutral-800"
+                toolOptions.strokeWidth === width ? 'bg-neutral-700' : 'hover:bg-neutral-800'
               }`}
             >
-              <div className="bg-white rounded-full" style={{ width: width * 1.5, height: width * 1.5 }} />
+              <div
+                className="bg-white rounded-full"
+                style={{ width: width * 1.5, height: width * 1.5 }}
+              />
             </button>
           ))}
         </div>
@@ -513,9 +676,13 @@ export function AnnotationModal() {
 
         {/* Fill Toggle */}
         <button
-          onClick={() => setToolOptions({ fillColor: toolOptions.fillColor ? null : toolOptions.strokeColor })}
+          onClick={() =>
+            setToolOptions({ fillColor: toolOptions.fillColor ? null : toolOptions.strokeColor })
+          }
           className={`px-3 py-1.5 text-[10px] uppercase tracking-wide rounded transition-colors ${
-            toolOptions.fillColor ? "bg-neutral-700 text-white" : "text-neutral-500 hover:text-white"
+            toolOptions.fillColor
+              ? 'bg-neutral-700 text-white'
+              : 'text-neutral-500 hover:text-white'
           }`}
         >
           Fill
@@ -523,9 +690,21 @@ export function AnnotationModal() {
 
         {/* Zoom */}
         <div className="flex items-center gap-2 ml-auto">
-          <button onClick={() => setScale(Math.max(scale - 0.1, 0.1))} className="w-7 h-7 rounded text-neutral-400 hover:text-white text-sm">-</button>
-          <span className="text-[10px] text-neutral-400 w-10 text-center">{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(Math.min(scale + 0.1, 5))} className="w-7 h-7 rounded text-neutral-400 hover:text-white text-sm">+</button>
+          <button
+            onClick={() => setScale(Math.max(scale - 0.1, 0.1))}
+            className="w-7 h-7 rounded text-neutral-400 hover:text-white text-sm"
+          >
+            -
+          </button>
+          <span className="text-[10px] text-neutral-400 w-10 text-center">
+            {Math.round(scale * 100)}%
+          </span>
+          <button
+            onClick={() => setScale(Math.min(scale + 0.1, 5))}
+            className="w-7 h-7 rounded text-neutral-400 hover:text-white text-sm"
+          >
+            +
+          </button>
         </div>
       </div>
 
@@ -534,26 +713,33 @@ export function AnnotationModal() {
         <input
           ref={textInputRef}
           type="text"
-          autoFocus
-          defaultValue={editingTextId === "new" ? "" : (annotations.find((a) => a.id === editingTextId) as TextShape)?.text || ""}
+          defaultValue={
+            editingTextId === 'new'
+              ? ''
+              : (annotations.find((a) => a.id === editingTextId) as TextShape)?.text || ''
+          }
           className="fixed z-[110] bg-transparent border-none outline-none"
           style={{
             left: textInputPosition.x,
             top: textInputPosition.y,
             fontSize: `${toolOptions.fontSize * scale}px`,
-            color: editingTextId === "new" ? toolOptions.strokeColor : ((annotations.find((a) => a.id === editingTextId) as TextShape)?.fill || toolOptions.strokeColor),
-            minWidth: "100px",
-            caretColor: "white",
+            color:
+              editingTextId === 'new'
+                ? toolOptions.strokeColor
+                : (annotations.find((a) => a.id === editingTextId) as TextShape)?.fill ||
+                  toolOptions.strokeColor,
+            minWidth: '100px',
+            caretColor: 'white',
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === 'Enter') {
               const value = (e.target as HTMLInputElement).value;
               if (value.trim()) {
-                if (editingTextId === "new" && pendingTextPosition) {
+                if (editingTextId === 'new' && pendingTextPosition) {
                   // Create new text annotation
                   const newShape: TextShape = {
                     id: `shape-${Date.now()}`,
-                    type: "text",
+                    type: 'text',
                     x: pendingTextPosition.x,
                     y: pendingTextPosition.y,
                     text: value,
@@ -567,16 +753,17 @@ export function AnnotationModal() {
                 } else {
                   updateAnnotation(editingTextId, { text: value });
                 }
-              } else if (editingTextId !== "new") {
+              } else if (editingTextId !== 'new') {
                 deleteAnnotation(editingTextId);
               }
               setEditingTextId(null);
               setTextInputPosition(null);
               setPendingTextPosition(null);
             }
-            if (e.key === "Escape") {
-              if (editingTextId !== "new") {
-                const currentText = (annotations.find((a) => a.id === editingTextId) as TextShape)?.text;
+            if (e.key === 'Escape') {
+              if (editingTextId !== 'new') {
+                const currentText = (annotations.find((a) => a.id === editingTextId) as TextShape)
+                  ?.text;
                 if (!currentText) {
                   deleteAnnotation(editingTextId);
                 }
@@ -596,11 +783,11 @@ export function AnnotationModal() {
 
             const value = e.target.value;
             if (value.trim()) {
-              if (editingTextId === "new" && pendingTextPosition) {
+              if (editingTextId === 'new' && pendingTextPosition) {
                 // Create new text annotation
                 const newShape: TextShape = {
                   id: `shape-${Date.now()}`,
-                  type: "text",
+                  type: 'text',
                   x: pendingTextPosition.x,
                   y: pendingTextPosition.y,
                   text: value,
@@ -614,7 +801,7 @@ export function AnnotationModal() {
               } else {
                 updateAnnotation(editingTextId, { text: value });
               }
-            } else if (editingTextId !== "new") {
+            } else if (editingTextId !== 'new') {
               deleteAnnotation(editingTextId);
             }
             setEditingTextId(null);

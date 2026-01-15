@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { WorkflowFile } from "@/store/workflowStore";
-import { getAllPresets } from "@/lib/quickstart/templates";
-import { QuickstartBackButton } from "./QuickstartBackButton";
-import { CommunityWorkflowMeta } from "@/types/quickstart";
+import { useCallback, useEffect, useState } from 'react';
+import { getAllPresets } from '@/lib/quickstart/templates';
+import type { WorkflowFile } from '@/store/workflowStore';
+import type { CommunityWorkflowMeta } from '@/types/quickstart';
+import { QuickstartBackButton } from './QuickstartBackButton';
 
 interface QuickstartTemplatesViewProps {
   onBack: () => void;
@@ -26,16 +26,16 @@ export function QuickstartTemplatesView({
   useEffect(() => {
     async function fetchCommunityWorkflows() {
       try {
-        const response = await fetch("/api/community-workflows");
+        const response = await fetch('/api/community-workflows');
         const result = await response.json();
 
         if (result.success) {
           setCommunityWorkflows(result.workflows);
         } else {
-          console.error("Failed to fetch community workflows:", result.error);
+          console.error('Failed to fetch community workflows:', result.error);
         }
       } catch (err) {
-        console.error("Error fetching community workflows:", err);
+        console.error('Error fetching community workflows:', err);
       } finally {
         setIsLoadingList(false);
       }
@@ -50,27 +50,27 @@ export function QuickstartTemplatesView({
       setError(null);
 
       try {
-        const response = await fetch("/api/quickstart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/quickstart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             templateId,
-            contentLevel: "full",
+            contentLevel: 'full',
           }),
         });
 
         const result = await response.json();
 
         if (!result.success) {
-          throw new Error(result.error || "Failed to load template");
+          throw new Error(result.error || 'Failed to load template');
         }
 
         if (result.workflow) {
           onWorkflowSelected(result.workflow);
         }
       } catch (err) {
-        console.error("Error loading preset:", err);
-        setError(err instanceof Error ? err.message : "Failed to load template");
+        console.error('Error loading preset:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load template');
       } finally {
         setLoadingWorkflowId(null);
       }
@@ -88,15 +88,15 @@ export function QuickstartTemplatesView({
         const result = await response.json();
 
         if (!result.success) {
-          throw new Error(result.error || "Failed to load workflow");
+          throw new Error(result.error || 'Failed to load workflow');
         }
 
         if (result.workflow) {
           onWorkflowSelected(result.workflow);
         }
       } catch (err) {
-        console.error("Error loading community workflow:", err);
-        setError(err instanceof Error ? err.message : "Failed to load workflow");
+        console.error('Error loading community workflow:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load workflow');
       } finally {
         setLoadingWorkflowId(null);
       }
@@ -111,13 +111,17 @@ export function QuickstartTemplatesView({
       {/* Header */}
       <div className="px-6 py-4 border-b border-neutral-700 flex items-center gap-4">
         <QuickstartBackButton onClick={onBack} disabled={isLoading} />
-        <h2 className="text-lg font-semibold text-neutral-100">
-          Workflow Templates
-        </h2>
+        <h2 className="text-lg font-semibold text-neutral-100">Workflow Templates</h2>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Description */}
+        <p className="text-sm text-neutral-400">
+          Pre-built workflows to help you get started quickly. Select a template to load it into the
+          canvas.
+        </p>
+
         {/* Quick Start Templates */}
         <div className="space-y-3">
           <h3 className="text-xs font-medium text-neutral-400 uppercase tracking-wider">
@@ -133,11 +137,11 @@ export function QuickstartTemplatesView({
                   group flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all text-left
                   ${
                     loadingWorkflowId === preset.id
-                      ? "bg-blue-600/20 border-blue-500/50"
-                      : "bg-neutral-800/50 border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800"
+                      ? 'bg-blue-600/20 border-blue-500/50'
+                      : 'bg-neutral-800/50 border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800'
                   }
-                  ${isLoading && loadingWorkflowId !== preset.id ? "opacity-50" : ""}
-                  ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}
+                  ${isLoading && loadingWorkflowId !== preset.id ? 'opacity-50' : ''}
+                  ${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}
                 `}
               >
                 <div
@@ -145,8 +149,8 @@ export function QuickstartTemplatesView({
                     w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0
                     ${
                       loadingWorkflowId === preset.id
-                        ? "bg-blue-500/30"
-                        : "bg-neutral-700/50 group-hover:bg-neutral-700"
+                        ? 'bg-blue-500/30'
+                        : 'bg-neutral-700/50 group-hover:bg-neutral-700'
                     }
                   `}
                 >
@@ -178,21 +182,13 @@ export function QuickstartTemplatesView({
                       stroke="currentColor"
                       strokeWidth={1.5}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d={preset.icon}
-                      />
+                      <path strokeLinecap="round" strokeLinejoin="round" d={preset.icon} />
                     </svg>
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-neutral-200 truncate">
-                    {preset.name}
-                  </div>
-                  <div className="text-[10px] text-neutral-500 truncate">
-                    {preset.description}
-                  </div>
+                  <div className="text-sm font-medium text-neutral-200 truncate">{preset.name}</div>
+                  <div className="text-[10px] text-neutral-500 truncate">{preset.description}</div>
                 </div>
               </button>
             ))}
@@ -231,9 +227,7 @@ export function QuickstartTemplatesView({
               </svg>
             </div>
           ) : communityWorkflows.length === 0 ? (
-            <p className="text-sm text-neutral-500 py-4">
-              No community workflows available
-            </p>
+            <p className="text-sm text-neutral-500 py-4">No community workflows available</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {communityWorkflows.map((workflow) => (
@@ -245,11 +239,11 @@ export function QuickstartTemplatesView({
                     group flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all text-left
                     ${
                       loadingWorkflowId === workflow.id
-                        ? "bg-purple-600/20 border-purple-500/50"
-                        : "bg-neutral-800/50 border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800"
+                        ? 'bg-purple-600/20 border-purple-500/50'
+                        : 'bg-neutral-800/50 border-neutral-700 hover:border-neutral-600 hover:bg-neutral-800'
                     }
-                    ${isLoading && loadingWorkflowId !== workflow.id ? "opacity-50" : ""}
-                    ${isLoading ? "cursor-not-allowed" : "cursor-pointer"}
+                    ${isLoading && loadingWorkflowId !== workflow.id ? 'opacity-50' : ''}
+                    ${isLoading ? 'cursor-not-allowed' : 'cursor-pointer'}
                   `}
                 >
                   <div
@@ -257,8 +251,8 @@ export function QuickstartTemplatesView({
                       w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0
                       ${
                         loadingWorkflowId === workflow.id
-                          ? "bg-purple-500/30"
-                          : "bg-neutral-700/50 group-hover:bg-neutral-700"
+                          ? 'bg-purple-500/30'
+                          : 'bg-neutral-700/50 group-hover:bg-neutral-700'
                       }
                     `}
                   >
@@ -302,14 +296,26 @@ export function QuickstartTemplatesView({
                     <div className="text-sm font-medium text-neutral-200 truncate">
                       {workflow.name}
                     </div>
-                    <div className="text-[10px] text-purple-400/80">
-                      @{workflow.author}
-                    </div>
+                    <div className="text-[10px] text-purple-400/80">@{workflow.author}</div>
                   </div>
                 </button>
               ))}
             </div>
           )}
+
+          {/* Discord CTA */}
+          <p className="text-xs text-neutral-500 mt-3">
+            Want to share your workflow?{' '}
+            <a
+              href="https://discord.com/invite/89Nr6EKkTf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:text-purple-300 underline"
+            >
+              Join our Discord
+            </a>{' '}
+            to submit it to the community templates.
+          </p>
         </div>
 
         {/* Error */}

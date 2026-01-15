@@ -1,29 +1,29 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { Handle, Position, NodeProps, Node } from "@xyflow/react";
-import { BaseNode } from "./BaseNode";
-import { useWorkflowStore } from "@/store/workflowStore";
-import { LLMGenerateNodeData, LLMProvider, LLMModelType } from "@/types";
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
+import { useCallback } from 'react';
+import { useWorkflowStore } from '@/store/workflowStore';
+import type { LLMGenerateNodeData, LLMModelType, LLMProvider } from '@/types';
+import { BaseNode } from './BaseNode';
 
 const PROVIDERS: { value: LLMProvider; label: string }[] = [
-  { value: "google", label: "Google" },
-  { value: "openai", label: "OpenAI" },
+  { value: 'google', label: 'Google' },
+  { value: 'openai', label: 'OpenAI' },
 ];
 
 const MODELS: Record<LLMProvider, { value: LLMModelType; label: string }[]> = {
   google: [
-    { value: "gemini-3-flash-preview", label: "Gemini 3 Flash" },
-    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-    { value: "gemini-3-pro-preview", label: "Gemini 3.0 Pro" },
+    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { value: 'gemini-3-pro-preview', label: 'Gemini 3.0 Pro' },
   ],
   openai: [
-    { value: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
-    { value: "gpt-4.1-nano", label: "GPT-4.1 Nano" },
+    { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
+    { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano' },
   ],
 };
 
-type LLMGenerateNodeType = Node<LLMGenerateNodeData, "llmGenerate">;
+type LLMGenerateNodeType = Node<LLMGenerateNodeData, 'llmGenerate'>;
 
 export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNodeType>) {
   const nodeData = data;
@@ -35,7 +35,7 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
       const firstModelForProvider = MODELS[newProvider][0].value;
       updateNodeData(id, {
         provider: newProvider,
-        model: firstModelForProvider
+        model: firstModelForProvider,
       });
     },
     [id, updateNodeData]
@@ -63,12 +63,12 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
   }, [id, regenerateNode]);
 
   const handleClearOutput = useCallback(() => {
-    updateNodeData(id, { outputText: null, status: "idle", error: null });
+    updateNodeData(id, { outputText: null, status: 'idle', error: null });
   }, [id, updateNodeData]);
 
-  const provider = nodeData.provider || "google";
+  const provider = nodeData.provider || 'google';
   const availableModels = MODELS[provider] || MODELS.google;
-  const model = availableModels.some(m => m.value === nodeData.model)
+  const model = availableModels.some((m) => m.value === nodeData.model)
     ? nodeData.model
     : availableModels[0].value;
 
@@ -81,14 +81,14 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
       onCustomTitleChange={(title) => updateNodeData(id, { customTitle: title || undefined })}
       onCommentChange={(comment) => updateNodeData(id, { comment: comment || undefined })}
       selected={selected}
-      hasError={nodeData.status === "error"}
+      hasError={nodeData.status === 'error'}
     >
       {/* Image input - optional */}
       <Handle
         type="target"
         position={Position.Left}
         id="image"
-        style={{ top: "35%" }}
+        style={{ top: '35%' }}
         data-handletype="image"
       />
       {/* Text input */}
@@ -96,21 +96,16 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
         type="target"
         position={Position.Left}
         id="text"
-        style={{ top: "65%" }}
+        style={{ top: '65%' }}
         data-handletype="text"
       />
       {/* Text output */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="text"
-        data-handletype="text"
-      />
+      <Handle type="source" position={Position.Right} id="text" data-handletype="text" />
 
       <div className="flex-1 flex flex-col min-h-0 gap-2">
         {/* Output preview area */}
         <div className="nodrag nopan nowheel relative w-full flex-1 min-h-[80px] border border-dashed border-neutral-600 rounded p-2 overflow-auto">
-          {nodeData.status === "loading" ? (
+          {nodeData.status === 'loading' ? (
             <div className="h-full flex items-center justify-center">
               <svg
                 className="w-4 h-4 animate-spin text-neutral-400"
@@ -132,10 +127,8 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
                 />
               </svg>
             </div>
-          ) : nodeData.status === "error" ? (
-            <span className="text-[10px] text-red-400">
-              {nodeData.error || "Failed"}
-            </span>
+          ) : nodeData.status === 'error' ? (
+            <span className="text-[10px] text-red-400">{nodeData.error || 'Failed'}</span>
           ) : nodeData.outputText ? (
             <>
               <p className="text-[10px] text-neutral-300 whitespace-pre-wrap break-words pr-6">
@@ -148,8 +141,18 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
                   className="w-5 h-5 bg-neutral-900/80 hover:bg-blue-600/80 disabled:opacity-50 disabled:cursor-not-allowed rounded flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
                   title="Regenerate"
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                 </button>
                 <button
@@ -157,7 +160,13 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
                   className="w-5 h-5 bg-neutral-900/80 hover:bg-red-600/80 rounded flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
                   title="Clear output"
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -165,9 +174,7 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
             </>
           ) : (
             <div className="h-full flex items-center justify-center">
-              <span className="text-neutral-500 text-[10px]">
-                Run to generate
-              </span>
+              <span className="text-neutral-500 text-[10px]">Run to generate</span>
             </div>
           )}
         </div>
@@ -200,7 +207,9 @@ export function LLMGenerateNode({ id, data, selected }: NodeProps<LLMGenerateNod
 
         {/* Temperature slider */}
         <div className="flex flex-col gap-0.5 shrink-0">
-          <label className="text-[9px] text-neutral-500">Temp: {nodeData.temperature.toFixed(1)}</label>
+          <label className="text-[9px] text-neutral-500">
+            Temp: {nodeData.temperature.toFixed(1)}
+          </label>
           <input
             type="range"
             min="0"

@@ -7,9 +7,9 @@
  * - Log file cleanup
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { saveSession, rotateLogFiles } from '@/utils/logger-server';
+import { type NextRequest, NextResponse } from 'next/server';
 import type { LogSession } from '@/utils/logger';
+import { rotateLogFiles, saveSession } from '@/utils/logger-server';
 
 /**
  * POST /api/logs - Save a logging session to disk

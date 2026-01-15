@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { logger } from "@/utils/logger";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { type NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/utils/logger';
 
 export const maxDuration = 300; // 5 minute timeout for large image operations
 
-const IMAGES_FOLDER = "inputs";
-const LEGACY_IMAGES_FOLDER = ".images"; // For backward compatibility
+const IMAGES_FOLDER = 'inputs';
+const LEGACY_IMAGES_FOLDER = '.images'; // For backward compatibility
 
 // POST: Save an image to the workflow's inputs or generations folder
 export async function POST(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const imageData = body.imageData; // Base64 data URL
 
     // Validate folder is one of the allowed values
-    if (folder !== IMAGES_FOLDER && folder !== "generations") {
+    if (folder !== IMAGES_FOLDER && folder !== 'generations') {
       folder = IMAGES_FOLDER;
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         hasImageData: !!imageData,
       });
       return NextResponse.json(
-        { success: false, error: "Missing required fields (workflowPath, imageId, imageData)" },
+        { success: false, error: 'Missing required fields (workflowPath, imageId, imageData)' },
         { status: 400 }
       );
     }
@@ -52,16 +52,16 @@ export async function POST(request: NextRequest) {
           workflowPath,
         });
         return NextResponse.json(
-          { success: false, error: "Workflow path is not a directory" },
+          { success: false, error: 'Workflow path is not a directory' },
           { status: 400 }
         );
       }
-    } catch (dirError) {
+    } catch (_dirError) {
       logger.warn('file.error', 'Workflow image save failed: directory does not exist', {
         workflowPath,
       });
       return NextResponse.json(
-        { success: false, error: "Workflow directory does not exist" },
+        { success: false, error: 'Workflow directory does not exist' },
         { status: 400 }
       );
     }
@@ -71,11 +71,16 @@ export async function POST(request: NextRequest) {
     try {
       await fs.mkdir(targetFolder, { recursive: true });
     } catch (mkdirError) {
-      logger.error('file.error', 'Failed to create target folder', {
-        targetFolder,
-      }, mkdirError instanceof Error ? mkdirError : undefined);
+      logger.error(
+        'file.error',
+        'Failed to create target folder',
+        {
+          targetFolder,
+        },
+        mkdirError instanceof Error ? mkdirError : undefined
+      );
       return NextResponse.json(
-        { success: false, error: "Failed to create target folder" },
+        { success: false, error: 'Failed to create target folder' },
         { status: 500 }
       );
     }
@@ -85,8 +90,8 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(targetFolder, filename);
 
     // Extract base64 data and convert to buffer
-    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
 
     // Write the image file
     await fs.writeFile(filePath, buffer);
@@ -103,14 +108,19 @@ export async function POST(request: NextRequest) {
       filePath,
     });
   } catch (error) {
-    logger.error('file.error', 'Failed to save workflow image', {
-      workflowPath,
-      imageId,
-    }, error instanceof Error ? error : undefined);
+    logger.error(
+      'file.error',
+      'Failed to save workflow image',
+      {
+        workflowPath,
+        imageId,
+      },
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Save failed",
+        error: error instanceof Error ? error.message : 'Save failed',
       },
       { status: 500 }
     );
@@ -119,9 +129,9 @@ export async function POST(request: NextRequest) {
 
 // GET: Load an image from the workflow's folders (inputs, generations, or legacy .images)
 export async function GET(request: NextRequest) {
-  const workflowPath = request.nextUrl.searchParams.get("workflowPath");
-  const imageId = request.nextUrl.searchParams.get("imageId");
-  const folder = request.nextUrl.searchParams.get("folder"); // Optional hint for which folder to check first
+  const workflowPath = request.nextUrl.searchParams.get('workflowPath');
+  const imageId = request.nextUrl.searchParams.get('imageId');
+  const folder = request.nextUrl.searchParams.get('folder'); // Optional hint for which folder to check first
 
   logger.info('file.load', 'Workflow image load request received', {
     workflowPath,
@@ -135,7 +145,7 @@ export async function GET(request: NextRequest) {
       hasImageId: !!imageId,
     });
     return NextResponse.json(
-      { success: false, error: "Missing required parameters (workflowPath, imageId)" },
+      { success: false, error: 'Missing required parameters (workflowPath, imageId)' },
       { status: 400 }
     );
   }
@@ -146,13 +156,13 @@ export async function GET(request: NextRequest) {
       const stats = await fs.stat(workflowPath);
       if (!stats.isDirectory()) {
         return NextResponse.json(
-          { success: false, error: "Workflow path is not a directory" },
+          { success: false, error: 'Workflow path is not a directory' },
           { status: 400 }
         );
       }
     } catch {
       return NextResponse.json(
-        { success: false, error: "Workflow directory does not exist" },
+        { success: false, error: 'Workflow directory does not exist' },
         { status: 400 }
       );
     }
@@ -160,13 +170,14 @@ export async function GET(request: NextRequest) {
     // Construct file path - check folders in order based on hint
     const filename = `${imageId}.png`;
     const inputsFolder = path.join(workflowPath, IMAGES_FOLDER);
-    const generationsFolder = path.join(workflowPath, "generations");
+    const generationsFolder = path.join(workflowPath, 'generations');
     const legacyFolder = path.join(workflowPath, LEGACY_IMAGES_FOLDER);
 
     // Build search order based on folder hint
-    const searchOrder = folder === "generations"
-      ? [generationsFolder, inputsFolder, legacyFolder]
-      : [inputsFolder, generationsFolder, legacyFolder];
+    const searchOrder =
+      folder === 'generations'
+        ? [generationsFolder, inputsFolder, legacyFolder]
+        : [inputsFolder, generationsFolder, legacyFolder];
 
     let filePath: string | null = null;
 
@@ -190,17 +201,14 @@ export async function GET(request: NextRequest) {
         imageId,
         searchedFolders: searchOrder,
       });
-      return NextResponse.json(
-        { success: false, error: "Image file not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Image file not found' }, { status: 404 });
     }
 
     // Read the image file
     const buffer = await fs.readFile(filePath);
 
     // Convert to base64 data URL
-    const base64 = buffer.toString("base64");
+    const base64 = buffer.toString('base64');
     const dataUrl = `data:image/png;base64,${base64}`;
 
     logger.info('file.load', 'Workflow image loaded successfully', {
@@ -215,14 +223,19 @@ export async function GET(request: NextRequest) {
       image: dataUrl,
     });
   } catch (error) {
-    logger.error('file.error', 'Failed to load workflow image', {
-      workflowPath,
-      imageId,
-    }, error instanceof Error ? error : undefined);
+    logger.error(
+      'file.error',
+      'Failed to load workflow image',
+      {
+        workflowPath,
+        imageId,
+      },
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Load failed",
+        error: error instanceof Error ? error.message : 'Load failed',
       },
       { status: 500 }
     );

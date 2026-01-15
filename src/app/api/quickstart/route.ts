@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
-import { WorkflowFile } from "@/store/workflowStore";
-import { ContentLevel, getPresetTemplate } from "@/lib/quickstart/templates";
-import { buildQuickstartPrompt } from "@/lib/quickstart/prompts";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { GoogleGenAI } from '@google/genai';
+import { type NextRequest, NextResponse } from 'next/server';
+import { buildQuickstartPrompt } from '@/lib/quickstart/prompts';
+import { type ContentLevel, getPresetTemplate } from '@/lib/quickstart/templates';
 import {
-  validateWorkflowJSON,
-  repairWorkflowJSON,
   parseJSONFromResponse,
-} from "@/lib/quickstart/validation";
-import { ImageInputNodeData } from "@/types";
-import fs from "fs/promises";
-import path from "path";
+  repairWorkflowJSON,
+  validateWorkflowJSON,
+} from '@/lib/quickstart/validation';
+import type { WorkflowFile } from '@/store/workflowStore';
+import type { ImageInputNodeData } from '@/types';
 
 export const maxDuration = 60; // 1 minute timeout
 
@@ -20,21 +20,20 @@ export const maxDuration = 60; // 1 minute timeout
 async function convertLocalImagesToBase64(workflow: WorkflowFile): Promise<WorkflowFile> {
   const updatedNodes = await Promise.all(
     workflow.nodes.map(async (node) => {
-      if (node.type === "imageInput") {
+      if (node.type === 'imageInput') {
         const data = node.data as ImageInputNodeData;
         // Check if image is a local path (starts with /sample-images/)
-        if (data.image && data.image.startsWith("/sample-images/")) {
+        if (data.image?.startsWith('/sample-images/')) {
           try {
             // Read file from public folder
-            const publicPath = path.join(process.cwd(), "public", data.image);
+            const publicPath = path.join(process.cwd(), 'public', data.image);
             const fileBuffer = await fs.readFile(publicPath);
-            const base64 = fileBuffer.toString("base64");
+            const base64 = fileBuffer.toString('base64');
 
             // Determine MIME type from extension
             const ext = path.extname(data.image).toLowerCase();
-            const mimeType = ext === ".png" ? "image/png"
-              : ext === ".webp" ? "image/webp"
-              : "image/jpeg";
+            const mimeType =
+              ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
 
             const dataUrl = `data:${mimeType};base64,${base64}`;
 
@@ -106,7 +105,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json<QuickstartResponse>(
           {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to load template",
+            error: error instanceof Error ? error.message : 'Failed to load template',
           },
           { status: 400 }
         );
@@ -114,12 +113,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate description
-    if (!description || typeof description !== "string" || description.trim().length < 3) {
+    if (!description || typeof description !== 'string' || description.trim().length < 3) {
       console.warn(`[Quickstart:${requestId}] Invalid description`);
       return NextResponse.json<QuickstartResponse>(
         {
           success: false,
-          error: "Please provide a description of your workflow (at least 3 characters)",
+          error: 'Please provide a description of your workflow (at least 3 characters)',
         },
         { status: 400 }
       );
@@ -132,7 +131,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<QuickstartResponse>(
         {
           success: false,
-          error: "API key not configured. Add GEMINI_API_KEY to .env.local",
+          error: 'API key not configured. Add GEMINI_API_KEY to .env.local',
         },
         { status: 500 }
       );
@@ -148,7 +147,7 @@ export async function POST(request: NextRequest) {
     const startTime = Date.now();
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
         temperature: 0.3, // Lower for more consistent JSON output
@@ -166,7 +165,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<QuickstartResponse>(
         {
           success: false,
-          error: "No response from AI model",
+          error: 'No response from AI model',
         },
         { status: 500 }
       );
@@ -185,7 +184,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<QuickstartResponse>(
         {
           success: false,
-          error: "Failed to parse workflow from AI response. Please try again.",
+          error: 'Failed to parse workflow from AI response. Please try again.',
         },
         { status: 500 }
       );
@@ -216,7 +215,9 @@ export async function POST(request: NextRequest) {
       workflow.id = `wf_${Date.now()}_quickstart`;
     }
 
-    console.log(`[Quickstart:${requestId}] Success - nodes: ${workflow.nodes.length}, edges: ${workflow.edges.length}`);
+    console.log(
+      `[Quickstart:${requestId}] Success - nodes: ${workflow.nodes.length}, edges: ${workflow.edges.length}`
+    );
 
     return NextResponse.json<QuickstartResponse>({
       success: true,
@@ -226,11 +227,11 @@ export async function POST(request: NextRequest) {
     console.error(`[Quickstart:${requestId}] Unexpected error:`, error);
 
     // Handle rate limiting
-    if (error instanceof Error && error.message.includes("429")) {
+    if (error instanceof Error && error.message.includes('429')) {
       return NextResponse.json<QuickstartResponse>(
         {
           success: false,
-          error: "Rate limit reached. Please wait a moment and try again.",
+          error: 'Rate limit reached. Please wait a moment and try again.',
         },
         { status: 429 }
       );
@@ -239,7 +240,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json<QuickstartResponse>(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to generate workflow",
+        error: error instanceof Error ? error.message : 'Failed to generate workflow',
       },
       { status: 500 }
     );
