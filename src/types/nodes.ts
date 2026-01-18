@@ -13,7 +13,7 @@ export type { AnnotationNodeData, BaseNodeData };
 
 // Import from domain files to avoid circular dependencies
 import type { AspectRatio, ModelType, Resolution } from './models';
-import type { LLMModelType, LLMProvider, SelectedModel } from './providers';
+import type { LLMModelType, LLMProvider, ProviderType, SelectedModel } from './providers';
 
 /**
  * All available node types in the workflow editor
@@ -210,3 +210,38 @@ export type WorkflowNode = Node<WorkflowNodeData, NodeType> & {
  * Handle types for node connections
  */
 export type HandleType = 'image' | 'text';
+
+/**
+ * Default settings for node types - stored in localStorage
+ */
+export interface GenerateImageNodeDefaults {
+  selectedModel?: {
+    provider: ProviderType;
+    modelId: string;
+    displayName: string;
+  };
+  aspectRatio?: string;
+  resolution?: string;
+  useGoogleSearch?: boolean;
+}
+
+export interface GenerateVideoNodeDefaults {
+  selectedModel?: {
+    provider: ProviderType;
+    modelId: string;
+    displayName: string;
+  };
+}
+
+export interface LLMNodeDefaults {
+  provider?: LLMProvider;
+  model?: LLMModelType;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface NodeDefaultsConfig {
+  generateImage?: GenerateImageNodeDefaults;
+  generateVideo?: GenerateVideoNodeDefaults;
+  llm?: LLMNodeDefaults;
+}

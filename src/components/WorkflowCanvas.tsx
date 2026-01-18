@@ -353,12 +353,22 @@ export function WorkflowCanvas() {
         const nodeData = node.data as { inputSchema?: Array<{ name: string; type: string }> };
         if (nodeData.inputSchema && nodeData.inputSchema.length > 0) {
           if (needInput) {
-            // Find first input handle matching the type
+            // Find input handles matching the type
             const matchingInputs = nodeData.inputSchema.filter((i) => i.type === handleType);
-            if (matchingInputs.length > 0) {
-              // Return normalized handle ID, not schema name
-              // Always use indexed IDs (image-0, text-0) for schema inputs for consistency
-              return `${handleType}-0`;
+            const numHandles = matchingInputs.length;
+            if (numHandles > 0) {
+              // Find the first unoccupied indexed handle by checking existing edges
+              for (let i = 0; i < numHandles; i++) {
+                const candidateHandle = `${handleType}-${i}`;
+                const isOccupied = edges.some(
+                  (edge) => edge.target === node.id && edge.targetHandle === candidateHandle
+                );
+                if (!isOccupied) {
+                  return candidateHandle;
+                }
+              }
+              // All handles are occupied
+              return null;
             }
           }
           // Output handle - check for video or image type
@@ -445,7 +455,7 @@ export function WorkflowCanvas() {
         sourceHandleId: fromHandleId,
       });
     },
-    [screenToFlowPosition, nodes, handleConnect, isValidConnection]
+    [screenToFlowPosition, nodes, edges, handleConnect, isValidConnection]
   );
 
   // Handle the splitGrid action - uses automated grid detection
@@ -805,6 +815,9 @@ export function WorkflowCanvas() {
           case 'g':
             nodeType = 'nanoBanana';
             break;
+          case 'v':
+            nodeType = 'generateVideo';
+            break;
           case 'l':
             nodeType = 'llmGenerate';
             break;
@@ -1076,7 +1089,7 @@ export function WorkflowCanvas() {
       const historyImageData = event.dataTransfer.getData('application/history-image');
       if (historyImageData) {
         try {
-          const { image, prompt: _prompt } = JSON.parse(historyImageData);
+          const { image, prompt } = JSON.parse(historyImageData);
           const position = screenToFlowPosition({
             x: event.clientX,
             y: event.clientY,
