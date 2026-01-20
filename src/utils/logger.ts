@@ -57,10 +57,6 @@ type _LoggerServer = {
 class Logger {
   private currentSession: LogSession | null = null;
 
-  constructor() {
-    this.isClient = typeof window !== 'undefined';
-  }
-
   /**
    * Initialize a new logging session for a workflow execution
    * Note: On client side, this just tracks in memory. File writing happens server-side in API routes.
@@ -204,7 +200,7 @@ class Logger {
       }
       // Handle nested objects
       else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        sanitized[key] = this.sanitizeContext(value);
+        sanitized[key] = this.sanitizeContext(value as Record<string, unknown>);
       }
       // Keep other values as-is
       else {

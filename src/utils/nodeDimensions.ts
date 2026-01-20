@@ -120,3 +120,39 @@ export function calculateNodeSize(
     height: Math.round(totalHeight),
   };
 }
+
+/**
+ * Calculate node dimensions that maintain aspect ratio while preserving current height if provided.
+ * @param aspectRatio - Width divided by height (e.g., 16/9 for landscape, 9/16 for portrait)
+ * @param currentHeight - Optional current height to preserve (if within constraints)
+ * @returns {width, height} dimensions that fit within constraints
+ */
+export function calculateNodeSizePreservingHeight(
+  aspectRatio: number,
+  currentHeight?: number
+): { width: number; height: number } {
+  // Handle invalid aspect ratios
+  if (!aspectRatio || aspectRatio <= 0 || !Number.isFinite(aspectRatio)) {
+    return { width: 300, height: currentHeight ?? 300 };
+  }
+
+  // If we have a current height, try to preserve it
+  if (currentHeight !== undefined && currentHeight >= MIN_HEIGHT && currentHeight <= MAX_HEIGHT) {
+    // Calculate content height (total - chrome)
+    const contentHeight = currentHeight - NODE_CHROME_HEIGHT;
+
+    // Calculate width from aspect ratio
+    let width = contentHeight * aspectRatio;
+
+    // Clamp width to constraints
+    width = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width));
+
+    return {
+      width: Math.round(width),
+      height: Math.round(currentHeight),
+    };
+  }
+
+  // Fall back to standard calculation if no valid current height
+  return calculateNodeSize(aspectRatio);
+}
