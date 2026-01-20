@@ -196,8 +196,11 @@ export function WorkflowCanvas() {
     isModalOpen,
     showQuickstart,
     setShowQuickstart,
+    navigationTarget,
+    setNavigationTarget,
   } = useWorkflowStore();
-  const { screenToFlowPosition, getViewport, zoomIn, zoomOut, setViewport } = useReactFlow();
+  const { screenToFlowPosition, getViewport, zoomIn, zoomOut, setViewport, setCenter } =
+    useReactFlow();
   const [isDragOver, setIsDragOver] = useState(false);
   const [dropType, setDropType] = useState<'image' | 'workflow' | 'node' | null>(null);
   const [connectionDrop, setConnectionDrop] = useState<ConnectionDropState | null>(null);
@@ -206,6 +209,25 @@ export function WorkflowCanvas() {
 
   // Detect if canvas is empty for showing quickstart
   const isCanvasEmpty = nodes.length === 0;
+
+  // Handle comment navigation - center viewport on target node
+  useEffect(() => {
+    if (navigationTarget) {
+      const targetNode = nodes.find((n) => n.id === navigationTarget.nodeId);
+      if (targetNode) {
+        // Calculate center of node
+        const nodeWidth = (targetNode.style?.width as number) || 300;
+        const nodeHeight = (targetNode.style?.height as number) || 280;
+        const centerX = targetNode.position.x + nodeWidth / 2;
+        const centerY = targetNode.position.y + nodeHeight / 2;
+
+        // Navigate to node center with animation, zoomed out to 0.7 for better context
+        setCenter(centerX, centerY, { duration: 300, zoom: 0.7 });
+      }
+      // Clear navigation target after navigating
+      setNavigationTarget(null);
+    }
+  }, [navigationTarget, nodes, setCenter, setNavigationTarget]);
 
   // Just pass regular nodes to React Flow - groups are rendered separately
   const allNodes = useMemo(() => {
@@ -858,23 +880,36 @@ export function WorkflowCanvas() {
         }
 
         // Check system clipboard for images first, then text
-        navigator.clipboard
-          .read()
-          .then(async (items) => {
-            for (const item of items) {
-              // Check for image
-              const imageType = item.types.find((type) => type.startsWith('image/'));
-              if (imageType) {
-                const blob = await item.getType(imageType);
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const dataUrl = e.target?.result as string;
-                  const viewport = getViewport();
-                  const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
-                  const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+        navigator.clipboard.read().then(async (items) => {
+          for (const item of items) {
+            // Check for image
+            const imageType = item.types.find((type) => type.startsWith('image/'));
+            if (imageType) {
+              const blob = await item.getType(imageType);
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const dataUrl = e.target?.result as string;
 
-                  const img = new Image();
-                  img.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                  // Check if an imageInput node is selected - if so, update it instead of creating new
+                  const selectedImageInputNode = nodes.find(
+                    (node) => node.selected && node.type === 'imageInput'
+                  );
+
+                  if (selectedImageInputNode) {
+                    // Update the selected imageInput node with the pasted image
+                    updateNodeData(selectedImageInputNode.id, {
+                      image: dataUrl,
+                      filename: `pasted-${Date.now()}.png`,
+                      dimensions: { width: img.width, height: img.height },
+                    });
+                  } else {
+                    // No imageInput node selected - create a new one at viewport center
+                    const viewport = getViewport();
+                    const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+                    const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+
                     // ImageInput node default dimensions: 300x280
                     const nodeId = addNode('imageInput', { x: centerX - 150, y: centerY - 140 });
                     updateNodeData(nodeId, {
@@ -882,12 +917,28 @@ export function WorkflowCanvas() {
                       filename: `pasted-${Date.now()}.png`,
                       dimensions: { width: img.width, height: img.height },
                     });
-                  };
-                  img.src = dataUrl;
+                  }
                 };
-                reader.readAsDataURL(blob);
-                return; // Exit after handling image
+                img.src = dataUrl;
+              };
+              reader.readAsDataURL(blob);
+              return; // Exit after handling image
+            }
+
+            // Check for text
+            if (item.types.includes('text/plain')) {
+              const blob = await item.getType('text/plain');
+              const text = await blob.text();
+              if (text.trim()) {
+                const viewport = getViewport();
+                const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+                const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+                // Prompt node default dimensions: 320x220
+                const nodeId = addNode('prompt', { x: centerX - 160, y: centerY - 110 });
+                updateNodeData(nodeId, { prompt: text });
+                return; // Exit after handling text
               }
+            }
 
               // Check for text
               if (item.types.includes('text/plain')) {

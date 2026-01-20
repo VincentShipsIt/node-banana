@@ -1,23 +1,16 @@
 'use client';
 
-import { Handle, type Node, type NodeProps, Position, useReactFlow } from '@xyflow/react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ModelSearchDialog } from '@/components/modals/ModelSearchDialog';
-import { useToast } from '@/components/Toast';
-import type { ModelCapability, ProviderModel } from '@/lib/providers/types';
-import { saveNanoBananaDefaults, useWorkflowStore } from '@/store/workflowStore';
-import type {
-  AspectRatio,
-  ModelInputDef,
-  ModelType,
-  NanoBananaNodeData,
-  ProviderType,
-  Resolution,
-  SelectedModel,
-} from '@/types';
-import { calculateNodeSize, getImageDimensions } from '@/utils/nodeDimensions';
-import { BaseNode } from './BaseNode';
-import { ModelParameters } from './ModelParameters';
+import React, { useCallback, useState, useEffect, useMemo, useRef } from "react";
+import { Handle, Position, NodeProps, Node, useReactFlow } from "@xyflow/react";
+import { BaseNode } from "./BaseNode";
+import { useCommentNavigation } from "@/hooks/useCommentNavigation";
+import { ModelParameters } from "./ModelParameters";
+import { useWorkflowStore, saveNanoBananaDefaults } from "@/store/workflowStore";
+import { NanoBananaNodeData, AspectRatio, Resolution, ModelType, ProviderType, SelectedModel, ModelInputDef } from "@/types";
+import { ProviderModel, ModelCapability } from "@/lib/providers/types";
+import { ModelSearchDialog } from "@/components/modals/ModelSearchDialog";
+import { useToast } from "@/components/Toast";
+import { getImageDimensions, calculateNodeSizePreservingHeight } from "@/utils/nodeDimensions";
 
 // Provider badge component - shows provider icon for all providers
 function ProviderBadge({ provider }: { provider: ProviderType }) {
@@ -79,6 +72,7 @@ type NanoBananaNodeType = Node<NanoBananaNodeData, 'nanoBanana'>;
 
 export function GenerateImageNode({ id, data, selected }: NodeProps<NanoBananaNodeType>) {
   const nodeData = data;
+  const commentNavigation = useCommentNavigation(id);
   const updateNodeData = useWorkflowStore((state) => state.updateNodeData);
   const generationsPath = useWorkflowStore((state) => state.generationsPath);
   const providerSettings = useWorkflowStore((state) => state.providerSettings);
@@ -318,37 +312,34 @@ export function GenerateImageNode({ id, data, selected }: NodeProps<NanoBananaNo
     regenerateNode(id);
   }, [id, regenerateNode]);
 
-  const loadImageById = useCallback(
-    async (imageId: string) => {
-      if (!generationsPath) {
-        console.error('Generations path not configured');
+  const loadImageById = useCallback(async (imageId: string) => {
+    if (!generationsPath) {
+      console.error("Generations path not configured");
+      return null;
+    }
+
+    try {
+      const response = await fetch("/api/load-generation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          directoryPath: generationsPath,
+          imageId,
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        // Missing images are expected when refs point to deleted/moved files
+        console.log(`Image not found: ${imageId}`);
         return null;
       }
-
-      try {
-        const response = await fetch('/api/load-generation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            directoryPath: generationsPath,
-            imageId,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to load image:', await response.text());
-          return null;
-        }
-
-        const result = await response.json();
-        return result.success ? result.image : null;
-      } catch (error) {
-        console.error('Error loading image:', error);
-        return null;
-      }
-    },
-    [generationsPath]
-  );
+      return result.image;
+    } catch (error) {
+      console.warn("Error loading image:", error);
+      return null;
+    }
+  }, [generationsPath]);
 
   const handleCarouselPrevious = useCallback(async () => {
     const history = nodeData.imageHistory || [];
@@ -453,7 +444,9 @@ export function GenerateImageNode({ id, data, selected }: NodeProps<NanoBananaNo
     }
     return null;
   }, [isGeminiOnly]);
-  const isNanoBananaPro = isGeminiProvider && nodeData.model === 'nano-banana-pro';
+  // Use selectedModel.modelId for Gemini models, fallback to legacy model field
+  const currentModelId = isGeminiProvider ? (nodeData.selectedModel?.modelId || nodeData.model) : null;
+  const isNanoBananaPro = currentModelId === "nano-banana-pro";
   const hasCarouselImages = (nodeData.imageHistory || []).length > 1;
 
   // Track previous status to detect error transitions
@@ -483,14 +476,20 @@ export function GenerateImageNode({ id, data, selected }: NodeProps<NanoBananaNo
         if (!dims) return;
 
         const aspectRatio = dims.width / dims.height;
-        const newSize = calculateNodeSize(aspectRatio);
 
         setNodes((nodes) =>
-          nodes.map((node) =>
-            node.id === id
-              ? { ...node, style: { ...node.style, width: newSize.width, height: newSize.height } }
-              : node
-          )
+          nodes.map((node) => {
+            if (node.id !== id) return node;
+
+            // Preserve user's manually set height if present
+            const currentHeight = typeof node.style?.height === 'number'
+              ? node.style.height
+              : undefined;
+
+            const newSize = calculateNodeSizePreservingHeight(aspectRatio, currentHeight);
+
+            return { ...node, style: { ...node.style, width: newSize.width, height: newSize.height } };
+          })
         );
       });
     });
@@ -498,29 +497,30 @@ export function GenerateImageNode({ id, data, selected }: NodeProps<NanoBananaNo
 
   return (
     <>
-      <BaseNode
-        id={id}
-        title={displayTitle}
-        customTitle={nodeData.customTitle}
-        comment={nodeData.comment}
-        onCustomTitleChange={(title) => updateNodeData(id, { customTitle: title || undefined })}
-        onCommentChange={(comment) => updateNodeData(id, { comment: comment || undefined })}
-        onRun={handleRegenerate}
-        selected={selected}
-        isExecuting={isRunning}
-        hasError={nodeData.status === 'error'}
-        headerAction={headerAction}
-        titlePrefix={titlePrefix}
-      >
-        {/* Dynamic input handles based on model schema (external providers only) */}
-        {!isGeminiProvider && nodeData.inputSchema && nodeData.inputSchema.length > 0 ? (
-          // Render handles from schema, sorted by type (images first, text second)
-          // IMPORTANT: Always render "image" and "text" handles to maintain connection
-          // compatibility. Schema may only have text inputs (text-to-image models) but
-          // we still need the image handle to preserve connections made before model selection.
-          (() => {
-            const imageInputs = nodeData.inputSchema!.filter((i) => i.type === 'image');
-            const textInputs = nodeData.inputSchema!.filter((i) => i.type === 'text');
+    <BaseNode
+      id={id}
+      title={displayTitle}
+      customTitle={nodeData.customTitle}
+      comment={nodeData.comment}
+      onCustomTitleChange={(title) => updateNodeData(id, { customTitle: title || undefined })}
+      onCommentChange={(comment) => updateNodeData(id, { comment: comment || undefined })}
+      onRun={handleRegenerate}
+      selected={selected}
+      isExecuting={isRunning}
+      hasError={nodeData.status === "error"}
+      headerAction={headerAction}
+      titlePrefix={titlePrefix}
+      commentNavigation={commentNavigation ?? undefined}
+    >
+      {/* Dynamic input handles based on model schema (external providers only) */}
+      {!isGeminiProvider && nodeData.inputSchema && nodeData.inputSchema.length > 0 ? (
+        // Render handles from schema, sorted by type (images first, text second)
+        // IMPORTANT: Always render "image" and "text" handles to maintain connection
+        // compatibility. Schema may only have text inputs (text-to-image models) but
+        // we still need the image handle to preserve connections made before model selection.
+        (() => {
+          const imageInputs = nodeData.inputSchema!.filter(i => i.type === "image");
+          const textInputs = nodeData.inputSchema!.filter(i => i.type === "text");
 
             // Always include at least one image and one text handle for connection stability
             const hasImageInput = imageInputs.length > 0;

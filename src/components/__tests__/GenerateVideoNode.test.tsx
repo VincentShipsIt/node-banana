@@ -105,6 +105,9 @@ describe('GenerateVideoNode', () => {
         nodes: [],
         recentModels: [],
         trackModelUsage: vi.fn(),
+        getNodesWithComments: vi.fn(() => []),
+        markCommentViewed: vi.fn(),
+        setNavigationTarget: vi.fn(),
       };
       return selector(state);
     });
@@ -275,6 +278,9 @@ describe('GenerateVideoNode', () => {
           currentNodeId: null,
           groups: {},
           nodes: [],
+          getNodesWithComments: vi.fn(() => []),
+          markCommentViewed: vi.fn(),
+          setNavigationTarget: vi.fn(),
         };
         return selector(state);
       });
@@ -621,6 +627,9 @@ describe('GenerateVideoNode', () => {
           currentNodeId: null,
           groups: {},
           nodes: [],
+          getNodesWithComments: vi.fn(() => []),
+          markCommentViewed: vi.fn(),
+          setNavigationTarget: vi.fn(),
         };
         return selector(state);
       });

@@ -162,6 +162,7 @@ export const createDefaultNodeData = (type: NodeType): WorkflowNodeData => {
     case 'output':
       return {
         image: null,
+        outputFilename: "",
       } as OutputNodeData;
   }
 };

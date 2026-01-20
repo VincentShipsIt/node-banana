@@ -1541,12 +1541,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use selectedModel.modelId if available (new format), fallback to legacy model field
+    const geminiModel = (selectedModel?.modelId as ModelType) || model;
+
     return await generateWithGemini(
       requestId,
       geminiApiKey,
       prompt,
       images || [],
-      model,
+      geminiModel,
       aspectRatio,
       resolution,
       useGoogleSearch

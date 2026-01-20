@@ -1,16 +1,18 @@
 'use client';
 
-import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
-import { useCallback, useRef } from 'react';
-import { useAnnotationStore } from '@/store/annotationStore';
-import { useWorkflowStore } from '@/store/workflowStore';
-import type { AnnotationNodeData } from '@/types';
-import { BaseNode } from './BaseNode';
+import { useCallback, useRef } from "react";
+import { Handle, Position, NodeProps, Node } from "@xyflow/react";
+import { BaseNode } from "./BaseNode";
+import { useCommentNavigation } from "@/hooks/useCommentNavigation";
+import { useAnnotationStore } from "@/store/annotationStore";
+import { useWorkflowStore } from "@/store/workflowStore";
+import { AnnotationNodeData } from "@/types";
 
 type AnnotationNodeType = Node<AnnotationNodeData, 'annotation'>;
 
 export function AnnotationNode({ id, data, selected }: NodeProps<AnnotationNodeType>) {
   const nodeData = data;
+  const commentNavigation = useCommentNavigation(id);
   const openModal = useAnnotationStore((state) => state.openModal);
   const updateNodeData = useWorkflowStore((state) => state.updateNodeData);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +94,7 @@ export function AnnotationNode({ id, data, selected }: NodeProps<AnnotationNodeT
       onCustomTitleChange={(title) => updateNodeData(id, { customTitle: title || undefined })}
       onCommentChange={(comment) => updateNodeData(id, { comment: comment || undefined })}
       selected={selected}
+      commentNavigation={commentNavigation ?? undefined}
     >
       <input
         ref={fileInputRef}

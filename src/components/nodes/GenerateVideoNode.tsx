@@ -1,15 +1,16 @@
 'use client';
 
-import { Handle, type Node, type NodeProps, Position, useReactFlow } from '@xyflow/react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ModelSearchDialog } from '@/components/modals/ModelSearchDialog';
-import { useToast } from '@/components/Toast';
-import type { ModelCapability, ProviderModel } from '@/lib/providers/types';
-import { useWorkflowStore } from '@/store/workflowStore';
-import type { GenerateVideoNodeData, ModelInputDef, ProviderType, SelectedModel } from '@/types';
-import { calculateNodeSize, getVideoDimensions } from '@/utils/nodeDimensions';
-import { BaseNode } from './BaseNode';
-import { ModelParameters } from './ModelParameters';
+import React, { useCallback, useState, useEffect, useMemo, useRef } from "react";
+import { Handle, Position, NodeProps, Node, useReactFlow } from "@xyflow/react";
+import { BaseNode } from "./BaseNode";
+import { useCommentNavigation } from "@/hooks/useCommentNavigation";
+import { ModelParameters } from "./ModelParameters";
+import { useWorkflowStore } from "@/store/workflowStore";
+import { GenerateVideoNodeData, ProviderType, SelectedModel, ModelInputDef } from "@/types";
+import { ProviderModel, ModelCapability } from "@/lib/providers/types";
+import { ModelSearchDialog } from "@/components/modals/ModelSearchDialog";
+import { useToast } from "@/components/Toast";
+import { getVideoDimensions, calculateNodeSizePreservingHeight } from "@/utils/nodeDimensions";
 
 // Provider badge component - shows provider icon for all providers
 function ProviderBadge({ provider }: { provider: ProviderType }) {
@@ -48,6 +49,7 @@ type GenerateVideoNodeType = Node<GenerateVideoNodeData, 'generateVideo'>;
 
 export function GenerateVideoNode({ id, data, selected }: NodeProps<GenerateVideoNodeType>) {
   const nodeData = data;
+  const commentNavigation = useCommentNavigation(id);
   const updateNodeData = useWorkflowStore((state) => state.updateNodeData);
   const providerSettings = useWorkflowStore((state) => state.providerSettings);
   const generationsPath = useWorkflowStore((state) => state.generationsPath);
@@ -198,37 +200,34 @@ export function GenerateVideoNode({ id, data, selected }: NodeProps<GenerateVide
   }, [id, regenerateNode]);
 
   // Load video by ID from generations folder
-  const loadVideoById = useCallback(
-    async (videoId: string) => {
-      if (!generationsPath) {
-        console.error('Generations path not configured');
+  const loadVideoById = useCallback(async (videoId: string) => {
+    if (!generationsPath) {
+      console.error("Generations path not configured");
+      return null;
+    }
+
+    try {
+      const response = await fetch("/api/load-generation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          directoryPath: generationsPath,
+          imageId: videoId,
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        // Missing videos are expected when refs point to deleted/moved files
+        console.log(`Video not found: ${videoId}`);
         return null;
       }
-
-      try {
-        const response = await fetch('/api/load-generation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            directoryPath: generationsPath,
-            imageId: videoId,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to load video:', await response.text());
-          return null;
-        }
-
-        const result = await response.json();
-        return result.success ? result.video || result.image : null;
-      } catch (error) {
-        console.error('Error loading video:', error);
-        return null;
-      }
-    },
-    [generationsPath]
-  );
+      return result.video || result.image;
+    } catch (error) {
+      console.warn("Error loading video:", error);
+      return null;
+    }
+  }, [generationsPath]);
 
   // Carousel navigation handlers
   const handleCarouselPrevious = useCallback(async () => {
@@ -355,14 +354,20 @@ export function GenerateVideoNode({ id, data, selected }: NodeProps<GenerateVide
         if (!dims) return;
 
         const aspectRatio = dims.width / dims.height;
-        const newSize = calculateNodeSize(aspectRatio);
 
         setNodes((nodes) =>
-          nodes.map((node) =>
-            node.id === id
-              ? { ...node, style: { ...node.style, width: newSize.width, height: newSize.height } }
-              : node
-          )
+          nodes.map((node) => {
+            if (node.id !== id) return node;
+
+            // Preserve user's manually set height if present
+            const currentHeight = typeof node.style?.height === 'number'
+              ? node.style.height
+              : undefined;
+
+            const newSize = calculateNodeSizePreservingHeight(aspectRatio, currentHeight);
+
+            return { ...node, style: { ...node.style, width: newSize.width, height: newSize.height } };
+          })
         );
       });
     });
@@ -370,29 +375,30 @@ export function GenerateVideoNode({ id, data, selected }: NodeProps<GenerateVide
 
   return (
     <>
-      <BaseNode
-        id={id}
-        title={displayTitle}
-        customTitle={nodeData.customTitle}
-        comment={nodeData.comment}
-        onCustomTitleChange={(title) => updateNodeData(id, { customTitle: title || undefined })}
-        onCommentChange={(comment) => updateNodeData(id, { comment: comment || undefined })}
-        onRun={handleRegenerate}
-        selected={selected}
-        isExecuting={isRunning}
-        hasError={nodeData.status === 'error'}
-        headerAction={headerAction}
-        titlePrefix={titlePrefix}
-      >
-        {/* Dynamic input handles based on model schema */}
-        {nodeData.inputSchema && nodeData.inputSchema.length > 0 ? (
-          // Render handles from schema, sorted by type (images first, text second)
-          // IMPORTANT: Always render "image" and "text" handles to maintain connection
-          // compatibility. Schema may only have text inputs (text-to-video models) but
-          // we still need the image handle to preserve connections made before model selection.
-          (() => {
-            const imageInputs = nodeData.inputSchema!.filter((i) => i.type === 'image');
-            const textInputs = nodeData.inputSchema!.filter((i) => i.type === 'text');
+    <BaseNode
+      id={id}
+      title={displayTitle}
+      customTitle={nodeData.customTitle}
+      comment={nodeData.comment}
+      onCustomTitleChange={(title) => updateNodeData(id, { customTitle: title || undefined })}
+      onCommentChange={(comment) => updateNodeData(id, { comment: comment || undefined })}
+      onRun={handleRegenerate}
+      selected={selected}
+      isExecuting={isRunning}
+      hasError={nodeData.status === "error"}
+      headerAction={headerAction}
+      titlePrefix={titlePrefix}
+      commentNavigation={commentNavigation ?? undefined}
+    >
+      {/* Dynamic input handles based on model schema */}
+      {nodeData.inputSchema && nodeData.inputSchema.length > 0 ? (
+        // Render handles from schema, sorted by type (images first, text second)
+        // IMPORTANT: Always render "image" and "text" handles to maintain connection
+        // compatibility. Schema may only have text inputs (text-to-video models) but
+        // we still need the image handle to preserve connections made before model selection.
+        (() => {
+          const imageInputs = nodeData.inputSchema!.filter(i => i.type === "image");
+          const textInputs = nodeData.inputSchema!.filter(i => i.type === "text");
 
             // Always include at least one image and one text handle for connection stability
             const hasImageInput = imageInputs.length > 0;

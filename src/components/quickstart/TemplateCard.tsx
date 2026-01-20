@@ -95,38 +95,36 @@ export function TemplateCard({
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header row */}
         <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="text-sm font-medium text-neutral-200 truncate">{template.name}</h3>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-700/50 text-neutral-400">
-              {nodeCount} nodes
-            </span>
-            <span
-              className={`
-                inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium
-                ${CATEGORY_COLORS[template.category]}
-              `}
-            >
-              {CATEGORY_LABELS[template.category]}
-            </span>
-          </div>
+          <h3 className="text-sm font-medium text-neutral-200 truncate">
+            {template.name}
+          </h3>
+          <span
+            className={`
+              inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0
+              ${CATEGORY_COLORS[template.category]}
+            `}
+          >
+            {CATEGORY_LABELS[template.category]}
+          </span>
         </div>
 
         {/* Description */}
         <p className="text-xs text-neutral-400 line-clamp-2 flex-1">{template.description}</p>
 
-        {/* Provider tags */}
-        {template.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {template.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-700/30 text-neutral-400"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Provider tags and node count */}
+        <div className="flex flex-wrap gap-1 mt-2">
+          {template.tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-700/30 text-neutral-400"
+            >
+              {tag}
+            </span>
+          ))}
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-700/50 text-neutral-400">
+            {nodeCount} nodes
+          </span>
+        </div>
 
         {/* Action row */}
         <div className="flex justify-end mt-2">
