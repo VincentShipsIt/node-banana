@@ -12,6 +12,7 @@ import {
   type OnConnectEnd,
   ReactFlow,
   useReactFlow,
+  type OnSelectionChangeParams,
 } from '@xyflow/react';
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '@xyflow/react/dist/style.css';
@@ -64,11 +65,10 @@ const getHandleType = (handleId: string | null | undefined): 'image' | 'text' | 
   // Standard handles
   if (handleId === 'video') return 'video';
   if (handleId === 'image' || handleId === 'text') return handleId;
-  // Dynamic handles - check naming patterns
+  // Dynamic handles - check naming patterns (including indexed: text-0, image-0)
   if (handleId.includes('video')) return 'video';
-  if (handleId.includes('image') || handleId.includes('frame')) return 'image';
-  if (handleId === 'prompt' || handleId === 'negative_prompt' || handleId.includes('prompt'))
-    return 'text';
+  if (handleId.startsWith('image-') || handleId.includes('image') || handleId.includes('frame')) return 'image';
+  if (handleId.startsWith('text-') || handleId === 'prompt' || handleId === 'negative_prompt' || handleId.includes('prompt')) return 'text';
   return null;
 };
 
@@ -80,7 +80,7 @@ const getNodeHandles = (nodeType: string): { inputs: string[]; outputs: string[]
     case 'annotation':
       return { inputs: ['image'], outputs: ['image'] };
     case 'prompt':
-      return { inputs: [], outputs: ['text'] };
+      return { inputs: ['text'], outputs: ['text'] };
     case 'nanoBanana':
       return { inputs: ['image', 'text'], outputs: ['image'] };
     case 'generateVideo':
@@ -652,6 +652,8 @@ export function WorkflowCanvas() {
             sourceHandleIdForNewNode = 'text';
           }
         } else if (nodeType === 'prompt') {
+          // prompt can receive and output text
+          targetHandleId = 'text';
           sourceHandleIdForNewNode = 'text';
         }
       }
@@ -1073,6 +1075,53 @@ export function WorkflowCanvas() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+
+  // Fix for React Flow selection bug where nodes with undefined bounds get incorrectly selected.
+  // Uses statistical outlier detection to identify and deselect nodes that are clearly
+  // outside the actual selection area.
+  const handleSelectionChange = useCallback(({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+    if (selectedNodes.length <= 1) return;
+
+    // Get positions of all selected nodes
+    const positions = selectedNodes.map(n => ({
+      id: n.id,
+      x: n.position.x,
+      y: n.position.y,
+    }));
+
+    // Calculate IQR-based bounds for outlier detection
+    const sortedX = [...positions].sort((a, b) => a.x - b.x);
+    const sortedY = [...positions].sort((a, b) => a.y - b.y);
+
+    const q1X = sortedX[Math.floor(sortedX.length * 0.25)].x;
+    const q3X = sortedX[Math.floor(sortedX.length * 0.75)].x;
+    const q1Y = sortedY[Math.floor(sortedY.length * 0.25)].y;
+    const q3Y = sortedY[Math.floor(sortedY.length * 0.75)].y;
+    const iqrX = q3X - q1X;
+    const iqrY = q3Y - q1Y;
+
+    // Outlier threshold: 3x IQR from quartiles
+    const minX = q1X - iqrX * 3;
+    const maxX = q3X + iqrX * 3;
+    const minY = q1Y - iqrY * 3;
+    const maxY = q3Y + iqrY * 3;
+
+    // Find and deselect outliers
+    const outliers = positions.filter(p =>
+      p.x < minX || p.x > maxX || p.y < minY || p.y > maxY
+    );
+
+    if (outliers.length > 0) {
+      onNodesChange(
+        outliers.map(o => ({
+          type: 'select' as const,
+          id: o.id,
+          selected: false,
+        }))
+      );
+    }
+  }, [onNodesChange]);
+
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
@@ -1282,6 +1331,7 @@ export function WorkflowCanvas() {
         onConnect={handleConnect}
         onConnectEnd={handleConnectEnd}
         onNodeDragStop={handleNodeDragStop}
+        onSelectionChange={handleSelectionChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         isValidConnection={isValidConnection}
